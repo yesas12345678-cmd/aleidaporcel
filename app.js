@@ -1120,26 +1120,22 @@ function openLightbox(photo) {
     audioPlayer.classList.remove('hidden');
     audioEl.src = `/api/media/${encodeURIComponent(photo.associatedAudioId)}/file`;
 
-        const playBtn = document.getElementById('btn-lightbox-play');
-        playBtn.innerHTML = '<i class="fas fa-play ml-1"></i>';
-        
-        playBtn.onclick = () => {
-          if (audioEl.paused) {
-            audioEl.play();
-            playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            state.activeAudio = audioEl;
-          } else {
-            audioEl.pause();
-            playBtn.innerHTML = '<i class="fas fa-play ml-1"></i>';
-          }
-        };
-
-        audioEl.onended = () => {
-          playBtn.innerHTML = '<i class="fas fa-play ml-1"></i>';
-        };
+    const playBtn = document.getElementById('btn-lightbox-play');
+    playBtn.innerHTML = '<i class="fas fa-play ml-1"></i>';
+    
+    playBtn.onclick = () => {
+      if (audioEl.paused) {
+        audioEl.play();
+        playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        state.activeAudio = audioEl;
       } else {
-        audioPlayer.classList.add('hidden');
+        audioEl.pause();
+        playBtn.innerHTML = '<i class="fas fa-play ml-1"></i>';
       }
+    };
+
+    audioEl.onended = () => {
+      playBtn.innerHTML = '<i class="fas fa-play ml-1"></i>';
     };
   } else {
     audioPlayer.classList.add('hidden');
