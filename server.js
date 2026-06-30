@@ -11,7 +11,13 @@ const port = process.env.PORT || 3000;
 const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:nx4uk54uryarhdw0@187.127.233.89:5436/postgres';
 const pool = new Pool({
   connectionString,
-  ssl: false // Disable SSL verification since certificate might be self-signed/invalid
+  ssl: false, // Disable SSL verification since certificate might be self-signed/invalid
+  connectionTimeoutMillis: 3000 // 3 seconds timeout to prevent hanging the server
+});
+
+// Handle unexpected errors on idle clients
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle PostgreSQL client:', err);
 });
 
 // Configure JSON body limits for handling base64 backup imports
@@ -367,9 +373,8 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Initialize database schema and start server
-initDatabase().then(() => {
-  app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-  });
+// Start server and initialize database schema in background
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+  initDatabase();
 });
