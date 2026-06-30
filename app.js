@@ -23,135 +23,131 @@ const state = {
   currentMuseumIndex: 0, // Índice de la foto activa en la galería 3D del Louvre
 };
 
-// Database Initialization
-const DB_NAME = 'ConstellationDB';
-const DB_VERSION = 1;
-
+// Database Helpers (PostgreSQL API Client)
 function initDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-    request.onerror = (e) => {
-      console.error('Database failed to open:', e);
-      reject(e);
-    };
-
-    request.onsuccess = (e) => {
-      state.db = e.target.result;
-      console.log('Database initialized successfully.');
-      resolve(state.db);
-    };
-
-    request.onupgradeneeded = (e) => {
-      const db = e.target.result;
-
-      // Settings store: final letter, anniversary date, etc.
-      if (!db.objectStoreNames.contains('settings')) {
-        db.createObjectStore('settings', { keyPath: 'key' });
-      }
-
-      // Media store: photos/videos for universe, museum, and video gallery
-      if (!db.objectStoreNames.contains('media')) {
-        const mediaStore = db.createObjectStore('media', { keyPath: 'id' });
-        mediaStore.createIndex('section', 'section', { unique: false });
-        mediaStore.createIndex('type', 'type', { unique: false });
-      }
-
-      // Memories store: constellation stars
-      if (!db.objectStoreNames.contains('memories')) {
-        db.createObjectStore('memories', { keyPath: 'id' });
-      }
-    };
-  });
+  console.log('PostgreSQL API client initialized.');
+  return Promise.resolve();
 }
 
-// Database Helpers
-function dbGetSetting(key, defaultValue) {
-  return new Promise((resolve) => {
-    if (!state.db) return resolve(defaultValue);
-    const transaction = state.db.transaction(['settings'], 'readonly');
-    const store = transaction.objectStore('settings');
-    const request = store.get(key);
-    request.onsuccess = () => resolve(request.result ? request.result.value : defaultValue);
-    request.onerror = () => resolve(defaultValue);
-  });
+async function dbGetSetting(key, defaultValue) {
+  try {
+    const response = await fetch(`/api/settings/${encodeURIComponent(key)}`);
+    if (!response.ok) return defaultValue;
+    const data = await response.json();
+    return data.value !== undefined ? data.value : defaultValue;
+  } catch (e) {
+    console.error('Error fetching setting:', e);
+    return defaultValue;
+  }
 }
 
-function dbSetSetting(key, value) {
-  return new Promise((resolve, reject) => {
-    if (!state.db) return resolve();
-    const transaction = state.db.transaction(['settings'], 'readwrite');
-    const store = transaction.objectStore('settings');
-    const request = store.put({ key, value });
-    request.onsuccess = () => resolve();
-    request.onerror = (e) => reject(e);
-  });
+async function dbSetSetting(key, value) {
+  try {
+    await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, value })
+    });
+  } catch (e) {
+    console.error('Error saving setting:', e);
+  }
 }
 
-function dbSaveMedia(mediaObj) {
-  return new Promise((resolve, reject) => {
-    if (!state.db) return resolve();
-    const transaction = state.db.transaction(['media'], 'readwrite');
-    const store = transaction.objectStore('media');
-    const request = store.put(mediaObj);
-    request.onsuccess = () => resolve();
-    request.onerror = (e) => reject(e);
-  });
+async function dbSaveMedia(mediaObj) {
+  try {
+    const formData = new FormData();
+    formData.append('id', mediaObj.id);
+    formData.append('name', mediaObj.name);
+    formData.append('type', mediaObj.type);
+    formData.append('section', mediaObj.section);
+    if (mediaObj.associatedAudioId) {
+      formData.append('associatedAudioId', mediaObj.associatedAudioId);
+    }
+    if (mediaObj.blob) {
+      formData.append('file', mediaObj.blob);
+    }
+    await fetch('/api/media', {
+      method: 'POST',
+      body: formData
+    });
+  } catch (e) {
+    console.error('Error saving media:', e);
+    throw e;
+  }
 }
 
-function dbGetAllMedia() {
-  return new Promise((resolve) => {
-    if (!state.db) return resolve([]);
-    const transaction = state.db.transaction(['media'], 'readonly');
-    const store = transaction.objectStore('media');
-    const request = store.getAll();
-    request.onsuccess = () => resolve(request.result || []);
-    request.onerror = () => resolve([]);
-  });
+async function dbGetAllMedia() {
+  try {
+    const response = await fetch('/api/media');
+    if (!response.ok) return [];
+    return await response.json();
+  } catch (e) {
+    console.error('Error fetching media:', e);
+    return [];
+  }
 }
 
-function dbDeleteMedia(id) {
-  return new Promise((resolve, reject) => {
-    if (!state.db) return resolve();
-    const transaction = state.db.transaction(['media'], 'readwrite');
-    const store = transaction.objectStore('media');
-    const request = store.delete(id);
-    request.onsuccess = () => resolve();
-    request.onerror = (e) => reject(e);
-  });
+async function dbDeleteMedia(id) {
+  try {
+    await fetch(`/api/media/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  } catch (e) {
+    console.error('Error deleting media:', e);
+    throw e;
+  }
 }
 
-function dbSaveMemory(memoryObj) {
-  return new Promise((resolve, reject) => {
-    if (!state.db) return resolve();
-    const transaction = state.db.transaction(['memories'], 'readwrite');
-    const store = transaction.objectStore('memories');
-    const request = store.put(memoryObj);
-    request.onsuccess = () => resolve();
-    request.onerror = (e) => reject(e);
-  });
+async function dbSaveMemory(memoryObj) {
+  try {
+    const formData = new FormData();
+    formData.append('id', memoryObj.id);
+    formData.append('title', memoryObj.title);
+    formData.append('date', memoryObj.date);
+    formData.append('text', memoryObj.text);
+    if (memoryObj.mediaBlob) {
+      formData.append('file', memoryObj.mediaBlob);
+    }
+    await fetch('/api/memories', {
+      method: 'POST',
+      body: formData
+    });
+  } catch (e) {
+    console.error('Error saving memory:', e);
+    throw e;
+  }
 }
 
-function dbGetAllMemories() {
-  return new Promise((resolve) => {
-    if (!state.db) return resolve([]);
-    const transaction = state.db.transaction(['memories'], 'readonly');
-    const store = transaction.objectStore('memories');
-    const request = store.getAll();
-    request.onsuccess = () => resolve(request.result || []);
-    request.onerror = () => resolve([]);
-  });
+async function dbGetAllMemories() {
+  try {
+    const response = await fetch('/api/memories');
+    if (!response.ok) return [];
+    return await response.json();
+  } catch (e) {
+    console.error('Error fetching memories:', e);
+    return [];
+  }
 }
 
-function dbDeleteMemory(id) {
-  return new Promise((resolve, reject) => {
-    if (!state.db) return resolve();
-    const transaction = state.db.transaction(['memories'], 'readwrite');
-    const store = transaction.objectStore('memories');
-    const request = store.delete(id);
-    request.onsuccess = () => resolve();
-    request.onerror = (e) => reject(e);
-  });
+async function dbDeleteMemory(id) {
+  try {
+    await fetch(`/api/memories/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  } catch (e) {
+    console.error('Error deleting memory:', e);
+    throw e;
+  }
+}
+
+// Media URL routing helpers
+function getMediaUrl(item) {
+  if (!item) return '';
+  if (item.url) return item.url;
+  if (item.blob) return URL.createObjectURL(item.blob);
+  return `/api/media/${item.id}/file`;
+}
+
+function getMemoryUrl(mem) {
+  if (!mem) return '';
+  if (mem.mediaBlob) return URL.createObjectURL(mem.mediaBlob);
+  return `/api/memories/${mem.id}/file`;
 }
 
 // ----------------------------------------------------
@@ -546,8 +542,8 @@ async function setupUniverseSection() {
   const media = await dbGetAllMedia();
   const universeItem = media.find(m => m.section === 'universe');
 
-  if (universeItem && universeItem.blob) {
-    const url = URL.createObjectURL(universeItem.blob);
+  if (universeItem) {
+    const url = getMediaUrl(universeItem);
     universePhoto.src = url;
   } else {
     universePhoto.src = 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=600';
@@ -804,9 +800,9 @@ function openMemoryModal(star) {
   dateSpan.textContent = `ESTRELLA DEL RECUERDO • ${formattedDate}`;
 
   // Media attachments check
-  if (star.mediaBlob) {
+  if (star.mediaType || star.mediaBlob) {
     mediaContainer.classList.remove('hidden');
-    const mediaUrl = URL.createObjectURL(star.mediaBlob);
+    const mediaUrl = getMemoryUrl(star);
 
     if (star.mediaType.startsWith('video/')) {
       videoPlayer.classList.remove('hidden');
@@ -1045,8 +1041,8 @@ function updateWallContent(wall, photo, wallIndex) {
     const img = document.createElement('img');
     img.className = 'museum-img-3d';
     img.loading = 'lazy';
-    if (photo.blob) {
-      img.src = URL.createObjectURL(photo.blob);
+    if (photo.id) {
+      img.src = getMediaUrl(photo);
     } else if (photo.url) {
       img.src = photo.url;
     }
@@ -1113,21 +1109,16 @@ function openLightbox(photo) {
   const audioPlayer = document.getElementById('lightbox-audio-player');
   const audioEl = document.getElementById('lightbox-audio-element');
 
-  if (photo.blob) {
-    img.src = URL.createObjectURL(photo.blob);
+  if (photo.id) {
+    img.src = getMediaUrl(photo);
   } else if (photo.url) {
     img.src = photo.url;
   }
 
   // If photo has associated audio
   if (photo.associatedAudioId) {
-    // Find associated audio file in DB
-    const request = state.db.transaction(['media'], 'readonly').objectStore('media').get(photo.associatedAudioId);
-    request.onsuccess = () => {
-      const audioItem = request.result;
-      if (audioItem && audioItem.blob) {
-        audioPlayer.classList.remove('hidden');
-        audioEl.src = URL.createObjectURL(audioItem.blob);
+    audioPlayer.classList.remove('hidden');
+    audioEl.src = `/api/media/${encodeURIComponent(photo.associatedAudioId)}/file`;
 
         const playBtn = document.getElementById('btn-lightbox-play');
         playBtn.innerHTML = '<i class="fas fa-play ml-1"></i>';
@@ -1239,7 +1230,7 @@ function openTheater(video) {
   const lightbox = document.getElementById('theater-lightbox');
   const videoEl = document.getElementById('theater-video-element');
 
-  videoEl.src = URL.createObjectURL(video.blob);
+  videoEl.src = getMediaUrl(video);
   lightbox.classList.remove('hidden');
   videoEl.play();
   
@@ -1310,7 +1301,7 @@ function renderRandomPick(pick, container) {
 
   if (pick.type === 'media') {
     const item = pick.item;
-    const url = URL.createObjectURL(item.blob);
+    const url = getMediaUrl(item);
 
     if (item.type.startsWith('image/')) {
       // Photo rendering
@@ -1343,8 +1334,8 @@ function renderRandomPick(pick, container) {
   } else if (pick.type === 'memory') {
     const item = pick.item;
     let mediaHTML = '';
-    if (item.mediaBlob) {
-      const url = URL.createObjectURL(item.mediaBlob);
+    if (item.mediaType || item.mediaBlob) {
+      const url = getMemoryUrl(item);
       if (item.mediaType.startsWith('video/')) {
         mediaHTML = `<video class="w-full max-h-[150px] rounded-lg mt-3" controls src="${url}"></video>`;
       } else {
@@ -1392,13 +1383,13 @@ async function triggerStarsCollision() {
       const media = await dbGetAllMedia();
       const finalVideoItem = media.find(m => m.section === 'video-gallery' && m.type.startsWith('video/'));
 
-      if (finalVideoItem && finalVideoItem.blob) {
+      if (finalVideoItem) {
         // Show stage 2 (Video player)
         const stageVideo = document.getElementById('final-stage-video');
         const videoEl = document.getElementById('final-video-element');
         
         stageVideo.classList.remove('hidden');
-        videoEl.src = URL.createObjectURL(finalVideoItem.blob);
+        videoEl.src = getMediaUrl(finalVideoItem);
         videoEl.play();
 
         videoEl.onended = () => {
@@ -1726,7 +1717,7 @@ async function loadAdminItems() {
       itemBadge = `MEDIA • ${details.section.toUpperCase()}`;
 
       if (details.type.startsWith('image/')) {
-        const url = URL.createObjectURL(details.blob);
+        const url = getMediaUrl(details);
         previewHTML = `<img src="${url}" class="w-12 h-12 object-cover rounded border border-white/10">`;
       } else {
         previewHTML = `<div class="w-12 h-12 rounded bg-black/40 flex items-center justify-center text-neon-cyan"><i class="fas fa-video"></i></div>`;
@@ -1788,77 +1779,29 @@ async function syncAdminStatistics() {
 
 // Backup Manager
 async function exportBackup() {
-  const media = await dbGetAllMedia();
-  const memories = await dbGetAllMemories();
-  
-  // Read database configurations
-  const finalLetter = await dbGetSetting('final_letter', '');
-  const anniversaryDate = await dbGetSetting('anniversary_date', '');
-
-  // Helper function to serialize blob into Base64 string for JSON transfer
-  const blobToBase64 = (blob) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
-
-  const backupData = {
-    settings: { finalLetter, anniversaryDate },
-    media: [],
-    memories: []
-  };
-
   alert('Preparando copia de seguridad. Esto puede tardar un momento si has subido muchos vídeos o fotos...');
-
-  for (let m of media) {
-    let b64 = '';
-    if (m.blob) {
-      b64 = await blobToBase64(m.blob);
-    }
-    backupData.media.push({
-      id: m.id,
-      name: m.name,
-      type: m.type,
-      section: m.section,
-      associatedAudioId: m.associatedAudioId,
-      createdAt: m.createdAt,
-      base64Blob: b64
-    });
+  try {
+    const response = await fetch('/api/backup');
+    if (!response.ok) throw new Error('Error al obtener la copia de seguridad');
+    const backupData = await response.json();
+    
+    // Create JSON download link
+    const jsonStr = JSON.stringify(backupData);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `backup_constelacion_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    alert('Copia de seguridad descargada exitosamente.');
+  } catch (e) {
+    console.error(e);
+    alert('Error al exportar la copia de seguridad.');
   }
-
-  for (let mem of memories) {
-    let b64 = '';
-    if (mem.mediaBlob) {
-      b64 = await blobToBase64(mem.mediaBlob);
-    }
-    backupData.memories.push({
-      id: mem.id,
-      title: mem.title,
-      date: mem.date,
-      text: mem.text,
-      mediaName: mem.mediaName,
-      mediaType: mem.mediaType,
-      createdAt: mem.createdAt,
-      base64Blob: b64
-    });
-  }
-
-  // Create JSON download link
-  const jsonStr = JSON.stringify(backupData);
-  const blob = new Blob([jsonStr], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `backup_constelacion_${new Date().toISOString().split('T')[0]}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  
-  alert('Copia de seguridad descargada exitosamente.');
 }
 
 async function importBackup(e) {
@@ -1878,58 +1821,15 @@ async function importBackup(e) {
         throw new Error('Formato de copia de seguridad inválido.');
       }
 
-      const base64ToBlob = (b64Data) => {
-        const parts = b64Data.split(';base64,');
-        const contentType = parts[0].split(':')[1];
-        const raw = window.atob(parts[1]);
-        const rawLength = raw.length;
-        const uInt8Array = new Uint8Array(rawLength);
-        for (let i = 0; i < rawLength; ++i) {
-          uInt8Array[i] = raw.charCodeAt(i);
-        }
-        return new Blob([uInt8Array], { type: contentType });
-      };
+      alert('Restaurando elementos en la base de datos central de PostgreSQL...');
 
-      alert('Restaurando elementos en la base de datos local...');
+      const response = await fetch('/api/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
 
-      // Save Configurations
-      if (data.settings.finalLetter) await dbSetSetting('final_letter', data.settings.finalLetter);
-      if (data.settings.anniversaryDate) await dbSetSetting('anniversary_date', data.settings.anniversaryDate);
-
-      // Restore Media files
-      for (let m of data.media) {
-        let blob = null;
-        if (m.base64Blob) {
-          blob = base64ToBlob(m.base64Blob);
-        }
-        await dbSaveMedia({
-          id: m.id,
-          name: m.name,
-          type: m.type,
-          section: m.section,
-          associatedAudioId: m.associatedAudioId,
-          createdAt: m.createdAt,
-          blob: blob
-        });
-      }
-
-      // Restore constellation memories
-      for (let mem of data.memories) {
-        let blob = null;
-        if (mem.base64Blob) {
-          blob = base64ToBlob(mem.base64Blob);
-        }
-        await dbSaveMemory({
-          id: mem.id,
-          title: mem.title,
-          date: mem.date,
-          text: mem.text,
-          mediaName: mem.mediaName,
-          mediaType: mem.mediaType,
-          createdAt: mem.createdAt,
-          mediaBlob: blob
-        });
-      }
+      if (!response.ok) throw new Error('Error en el servidor al restaurar');
 
       // Clear input file
       fileInput.value = '';

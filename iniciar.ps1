@@ -1,22 +1,29 @@
-# Servidor Web Local en PowerShell
-# Este script levanta un servidor HTTP ligero en el puerto 8080 para servir los archivos de la web en local.
+# Servidor Web Local y Backend PostgreSQL en Node.js
+# Este script levanta el servidor Express en el puerto 8080 para servir los archivos y conectar con PostgreSQL.
 
 $port = 8080
-$listener = New-Object System.Net.HttpListener
-$listener.Prefixes.Add("http://localhost:$port/")
 
 Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
 Write-Host "  Iniciando Servidor de Experiencia Interactiva..." -ForegroundColor Cyan
 Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
 
-try {
-    $listener.Start()
-} catch {
-    Write-Host "ERROR: No se pudo iniciar el servidor en el puerto $port." -ForegroundColor Red
-    Write-Host "Es posible que el puerto ya esté en uso por otra aplicación." -ForegroundColor Red
-    Write-Host "Detalles: $_" -ForegroundColor DarkRed
+# 1. Verificar si Node.js está disponible
+if (!(Get-Command node -ErrorAction SilentlyContinue)) {
+    Write-Host "ERROR: Node.js no está instalado o no se encuentra en el PATH." -ForegroundColor Red
+    Write-Host "Por favor instalalo o reinicia el shell si lo acabas de instalar." -ForegroundColor Red
     Pause
     Exit
+}
+
+# 2. Instalar dependencias si no existe node_modules
+if (!(Test-Path "node_modules")) {
+    Write-Host "Instalando dependencias necesarias (primera vez)..." -ForegroundColor Yellow
+    npm install
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Falló la instalación de dependencias de npm." -ForegroundColor Red
+        Pause
+        Exit
+    }
 }
 
 Write-Host "Servidor activo en: http://localhost:$port" -ForegroundColor Green
@@ -27,56 +34,5 @@ Write-Host "--------------------------------------------------------" -Foregroun
 # Abrir en el navegador predeterminado
 Start-Process "http://localhost:$port/"
 
-# Bucle para manejar peticiones
-while ($listener.IsListening) {
-    try {
-        $context = $listener.GetContext()
-        $request = $context.Request
-        $response = $context.Response
-
-        $urlPath = $request.Url.LocalPath
-        if ($urlPath -eq "/") {
-            $urlPath = "/index.html"
-        }
-
-        # Evitar vulnerabilidad de path traversal simple
-        $cleanPath = $urlPath.Replace("/", "\").TrimStart("\")
-        $filePath = Join-Path $PSScriptRoot $cleanPath
-
-        if (Test-Path $filePath -PathType Leaf) {
-            $bytes = [System.IO.File]::ReadAllBytes($filePath)
-            
-            $ext = [System.IO.Path]::GetExtension($filePath).ToLower()
-            $contentType = switch ($ext) {
-                ".html" { "text/html; charset=utf-8" }
-                ".css"  { "text/css; charset=utf-8" }
-                ".js"   { "application/javascript; charset=utf-8" }
-                ".json" { "application/json; charset=utf-8" }
-                ".png"  { "image/png" }
-                ".jpg"  { "image/jpeg" }
-                ".jpeg" { "image/jpeg" }
-                ".gif"  { "image/gif" }
-                ".svg"  { "image/svg+xml" }
-                ".mp4"  { "video/mp4" }
-                ".mp3"  { "audio/mpeg" }
-                ".wav"  { "audio/wav" }
-                ".webm" { "video/webm" }
-                ".ogg"  { "audio/ogg" }
-                default { "application/octet-stream" }
-            }
-
-            $response.ContentType = $contentType
-            $response.ContentLength64 = $bytes.Length
-            $response.OutputStream.Write($bytes, 0, $bytes.Length)
-        } else {
-            $response.StatusCode = 404
-            $response.ContentType = "text/plain; charset=utf-8"
-            $errBytes = [System.Text.Encoding]::UTF8.GetBytes("Archivo no encontrado: $urlPath")
-            $response.ContentLength64 = $errBytes.Length
-            $response.OutputStream.Write($errBytes, 0, $errBytes.Length)
-        }
-        $response.Close()
-    } catch {
-        # Captura errores silenciosamente para evitar que el bucle se detenga
-    }
-}
+# Iniciar servidor Node.js (bloquea la consola para mantenerla activa)
+node server.js
