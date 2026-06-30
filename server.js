@@ -7,22 +7,66 @@ const path = require('path');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Connect to PostgreSQL database
-const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:nx4uk54uryarhdw0@187.127.233.89:5436/postgres';
-const pool = new Pool({
-  connectionString,
-  ssl: false, // Disable SSL verification since certificate might be self-signed/invalid
-  connectionTimeoutMillis: 3000 // 3 seconds timeout to prevent hanging the server
-});
+const { Client } = require('pg');
 
-// Handle unexpected errors on idle clients
-pool.on('error', (err) => {
-  console.error('Unexpected error on idle PostgreSQL client:', err);
-});
+// List of potential connection URLs to try (ordered by preference)
+const candidateUrls = [
+  process.env.DATABASE_URL,
+  'postgresql://postgres:nx4uk54uryarhdw0@postgres:5432/postgres',      // Dokploy internal network default
+  'postgresql://postgres:nx4uk54uryarhdw0@172.17.0.1:5436/postgres',    // Docker Gateway (host port 5436)
+  'postgresql://postgres:nx4uk54uryarhdw0@187.127.233.89:5436/postgres', // External public IP
+  'postgresql://postgres:nx4uk54uryarhdw0@localhost:5436/postgres'      // Local fallback
+].filter(Boolean);
+
+let pool = null;
+
+async function getPool() {
+  if (pool) return pool;
+
+  console.log('Testing PostgreSQL connection candidates...');
+  for (const url of candidateUrls) {
+    const maskedUrl = url.replace(/:[^:@]+@/, ':****@');
+    try {
+      console.log(`Testing connection: ${maskedUrl}`);
+      const client = new Client({
+        connectionString: url,
+        connectionTimeoutMillis: 2000
+      });
+      await client.connect();
+      await client.query('SELECT 1');
+      await client.end();
+      
+      console.log(`Successfully connected using: ${maskedUrl}`);
+      pool = new Pool({
+        connectionString: url,
+        ssl: false,
+        connectionTimeoutMillis: 3000
+      });
+      pool.on('error', (err) => {
+        console.error('Unexpected error on idle PostgreSQL client:', err);
+      });
+      return pool;
+    } catch (err) {
+      console.log(`Failed to connect using: ${maskedUrl}`);
+    }
+  }
+  
+  console.error('All PostgreSQL connection candidates failed.');
+  return null;
+}
 
 // Configure JSON body limits for handling base64 backup imports
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
+
+// Middleware to ensure database is online before handling API requests
+app.use('/api', async (req, res, next) => {
+  const currentPool = await getPool();
+  if (!currentPool) {
+    return res.status(503).json({ error: 'Database is offline' });
+  }
+  next();
+});
 
 // Configure multer for file uploads in memory
 const upload = multer({
@@ -32,10 +76,16 @@ const upload = multer({
 
 // Initialize database schema (runs automatically on startup)
 async function initDatabase() {
+  const currentPool = await getPool();
+  if (!currentPool) {
+    console.error('Database schema initialization skipped: database is offline.');
+    return;
+  }
+
   let client;
   try {
     console.log('Initializing database tables...');
-    client = await pool.connect();
+    client = await currentPool.connect();
     
     // Create settings table
     await client.query(`
