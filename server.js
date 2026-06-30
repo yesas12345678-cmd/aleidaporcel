@@ -26,9 +26,10 @@ const upload = multer({
 
 // Initialize database schema (runs automatically on startup)
 async function initDatabase() {
-  const client = await pool.connect();
+  let client;
   try {
     console.log('Initializing database tables...');
+    client = await pool.connect();
     
     // Create settings table
     await client.query(`
@@ -69,7 +70,7 @@ async function initDatabase() {
   } catch (err) {
     console.error('Error initializing database:', err);
   } finally {
-    client.release();
+    if (client) client.release();
   }
 }
 
