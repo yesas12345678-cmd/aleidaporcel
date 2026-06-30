@@ -1,7 +1,7 @@
 # Servidor Web Local y Backend PostgreSQL en Node.js
-# Este script levanta el servidor Express en el puerto 8080 para servir los archivos y conectar con PostgreSQL.
+# Este script levanta el servidor Express en el puerto 3000 para servir los archivos y conectar con PostgreSQL.
 
-$port = 8080
+$port = 3000
 
 Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
 Write-Host "  Iniciando Servidor de Experiencia Interactiva..." -ForegroundColor Cyan

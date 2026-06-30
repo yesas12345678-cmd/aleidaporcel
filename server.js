@@ -5,7 +5,7 @@ const multer = require('multer');
 const path = require('path');
 
 const app = express();
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 3000;
 
 // Connect to PostgreSQL database
 const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:nx4uk54uryarhdw0@187.127.233.89:5436/postgres';
