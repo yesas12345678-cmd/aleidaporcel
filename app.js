@@ -294,7 +294,7 @@ function getHash() {
 }
 
 function checkSession() {
-  state.isAuthenticated = true; // Desactivado login temporalmente para pruebas locales
+  state.isAuthenticated = sessionStorage.getItem('couple_auth') === 'true';
   state.isAdmin = sessionStorage.getItem('admin_auth') === 'true';
 }
 
