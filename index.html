@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nuestra Constelación - Experiencia Interactiva</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind Config for Custom Styling -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            space: {
+              DEFAULT: '#050508',
+              light: '#0d1b2a',
+              deep: '#030712',
+            },
+            neon: {
+              cyan: '#00f2ff',
+              purple: '#8b5cf6',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="style.css?v=3">
+  <!-- GSAP CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+</head>
+<body class="bg-space text-gray-100 select-none overflow-x-hidden">
+
+  <!-- Interactive Space Canvas (Background Starfield) -->
+  <canvas id="starfield"></canvas>
+  <div id="nebula-glow"></div>
+
+  <!-- Ambient Music Widget -->
+  <div id="ambient-player-container" class="music-widget hidden" style="display: none !important;">
+    <button id="btn-toggle-music" class="glass-premium w-12 h-12 rounded-full flex items-center justify-center text-neon-cyan hover:text-white transition-all duration-300 hover:scale-105" title="Música de fondo">
+      <i id="music-icon" class="fas fa-music"></i>
+    </button>
+    <audio id="ambient-audio" loop></audio>
+  </div>
+
+  <!-- Navigation Progress & Indicators -->
+  <div id="experience-nav-tracker" class="fixed left-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-40 hidden items-center">
+    <div class="h-12 w-px bg-gray-800 self-center mb-1"></div>
+    <button id="tracker-btn-prev" class="nav-arrow-btn text-gray-500 hover:text-neon-cyan transition-all duration-300 text-sm hover:scale-110 p-1" title="Sección Anterior">
+      <i class="fas fa-chevron-up"></i>
+    </button>
+    <button data-target="universo" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Universo"></button>
+    <button data-target="constelacion" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Constelación"></button>
+    <button data-target="museo" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Museo"></button>
+    <button data-target="videos" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Galería de Vídeos"></button>
+    <button data-target="archivo" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Archivo Aleatorio"></button>
+    <button data-target="final" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="El Final"></button>
+    <button id="tracker-btn-next" class="nav-arrow-btn text-gray-500 hover:text-neon-cyan transition-all duration-300 text-sm hover:scale-110 p-1" title="Siguiente Sección">
+      <i class="fas fa-chevron-down"></i>
+    </button>
+    <div class="h-12 w-px bg-gray-800 self-center mt-1"></div>
+  </div>
+
+  <!-- Floating Navigation Controls -->
+  <div id="experience-nav-controls" class="nav-controls hidden">
+    <button id="btn-prev-chapter" class="nav-btn disabled" title="Capítulo Anterior">
+      ← Anterior
+    </button>
+    <button id="btn-next-chapter" class="nav-btn" title="Siguiente Capítulo">
+      Siguiente →
+    </button>
+  </div>
+
+  <!-- Top bar -->
+  <header id="experience-header" class="fixed top-0 left-0 w-full p-6 flex justify-between items-center z-40 hidden">
+    <div class="flex items-center gap-3">
+      <i class="fas fa-infinity text-neon-cyan neon-star-glow text-xl"></i>
+      <span class="serif-title text-xl tracking-widest text-gray-200">14.05.26</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <!-- Opciones ocultadas a petición -->
+    </div>
+  </header>
+
+  <!-- ================= SECTION 1: PUBLIC ACCESS (LOGIN) =================
+  <section id="sec-login" class="page-section active z-50">
+    <div class="w-full max-w-md p-8 rounded-2xl glass-premium text-center flex flex-col items-center">
+      <div class="mb-8 relative">
+        <i class="fas fa-star-and-crescent text-6xl text-neon-cyan animate-pulse"></i>
+        <div class="absolute -top-1 -right-1 w-3 h-3 bg-neon-purple rounded-full blur-sm"></div>
+      </div>
+      <h1 class="serif-title text-4xl mb-3 text-white tracking-wider">Acceso al Universo</h1>
+      <p class="text-gray-400 text-sm mb-8 font-light max-w-xs">Ingresa las coordenadas de tiempo y la clave para entrar en la experiencia.</p>
+      
+      <form id="form-login" class="w-full flex flex-col gap-5">
+        <div class="flex flex-col text-left">
+          <label for="login-date" class="text-xs uppercase tracking-wider text-neon-cyan font-semibold mb-2">Fecha clave (DD/MM/AA)</label>
+          <input type="text" id="login-date" class="w-full px-4 py-3 rounded-lg glass-input text-center text-lg" placeholder="14/05/26" required autocomplete="off">
+        </div>
+        <div class="flex flex-col text-left mb-4">
+          <label for="login-pass" class="text-xs uppercase tracking-wider text-neon-cyan font-semibold mb-2">Contraseña secreta</label>
+          <input type="password" id="login-pass" class="w-full px-4 py-3 rounded-lg glass-input text-center text-lg tracking-widest" placeholder="••••" required>
+        </div>
+        <div id="login-error" class="text-red-400 text-sm hidden font-light">Acceso no disponible</div>
+        <button type="submit" class="w-full py-4 bg-gradient-to-r from-neon-purple to-neon-cyan text-space font-semibold uppercase tracking-widest rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 btn-glow shadow-lg shadow-neon-cyan/20">
+          Iniciar Viaje
+        </button>
+      </form>
+    </div>
+  </section>
+  ================= -->
+
+  <!-- ================= SECTION 2: UNIVERSO (INTRO) ================= -->
+  <section id="sec-universo" class="page-section active">
+    <div class="container max-w-4xl px-6 flex flex-col items-center justify-center text-center">
+      <div id="universe-photo-frame" class="mb-12 rounded-full overflow-hidden w-64 h-64 border-2 border-neon-cyan/30 shadow-2xl shadow-neon-cyan/10 relative transition-transform duration-1000 scale-90">
+        <!-- DynImg -->
+        <img id="universe-photo" class="w-full h-full object-cover grayscale-[20%] brightness-90 hover:grayscale-0 transition-all duration-500" src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=600" alt="Foto Universo Clave">
+        <div class="absolute inset-0 bg-gradient-to-t from-space-deep/40 to-transparent"></div>
+      </div>
+      <h2 id="universe-phrase" class="serif-title text-4xl md:text-5xl italic leading-relaxed text-gray-100 font-light mb-8 max-w-2xl px-4 opacity-0 transition-opacity duration-1000">
+        "En un universo infinito, tuve la suerte de coincidir contigo."
+      </h2>
+      <button id="btn-enter-constellation" class="px-8 py-3 rounded-full border border-neon-cyan/40 hover:bg-neon-cyan hover:text-space hover:border-neon-cyan transition-all duration-300 uppercase tracking-widest text-xs font-semibold hover:shadow-lg hover:shadow-neon-cyan/30" style="display: none !important;">
+        Explorar Constelación <i class="fas fa-arrow-right ml-2 text-[10px]"></i>
+      </button>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 3: CONSTELACIÓN (INTERACTIVE MAP) ================= -->
+  <section id="sec-constelacion" class="page-section">
+    <div class="absolute top-24 left-1/2 -translate-x-1/2 z-20 text-center w-full px-6 pointer-events-none">
+      <h2 class="serif-title text-3xl md:text-4xl tracking-widest text-white mb-2">El Mapa de Nuestra Vida</h2>
+      <p class="text-xs uppercase tracking-widest text-neon-cyan/70 font-light">Arrastra y haz clic en las estrellas para revivir recuerdos</p>
+    </div>
+
+    <!-- Constellation Canvas -->
+    <div class="constellation-container w-full h-screen" id="constellation-wrapper">
+      <canvas id="constellation-canvas"></canvas>
+    </div>
+
+    <!-- Memory Details Modal (Rendered on Star Click) -->
+    <div id="memory-modal" class="fixed inset-0 z-50 flex items-center justify-center px-4 hidden">
+      <div class="absolute inset-0 bg-space/85 backdrop-blur-md" id="memory-modal-bg"></div>
+      <div class="w-full max-w-lg p-8 rounded-2xl glass-premium z-10 relative flex flex-col gap-6 transform scale-95 transition-transform duration-300">
+        <button class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white flex items-center justify-center hover:scale-105 transition-all text-xl font-light z-30" id="btn-close-memory" title="Cerrar">
+          &times;
+        </button>
+        
+        <div>
+          <span class="text-xs uppercase tracking-widest text-neon-cyan" id="memory-category">Recuerdo de la Constelación</span>
+          <h3 class="serif-title text-3xl text-white mt-1 mb-3" id="memory-title">Título del Recuerdo</h3>
+          <div class="w-12 h-px bg-neon-cyan/50 mb-4"></div>
+          <p class="text-gray-300 font-light text-sm leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto pr-2" id="memory-text">El texto del recuerdo aparecerá aquí describiendo el momento especial vivido...</p>
+        </div>
+
+        <!-- Optional audio / small video player -->
+        <div id="memory-media-container" class="w-full hidden">
+          <!-- Audio Player Template -->
+          <div id="memory-audio-player" class="hidden flex items-center gap-4 bg-white/5 border border-white/10 p-4 rounded-xl">
+            <button id="btn-memory-play" class="w-12 h-12 rounded-full bg-neon-cyan text-space flex items-center justify-center hover:scale-105 transition-all">
+              <i class="fas fa-play ml-1"></i>
+            </button>
+            <div class="flex-1">
+              <div class="text-xs font-semibold text-white">Mensaje de voz / Audio especial</div>
+              <div class="w-full bg-gray-700 h-1.5 rounded-full mt-2 overflow-hidden relative">
+                <div id="audio-progress-bar" class="w-0 bg-neon-cyan h-full rounded-full transition-all duration-100"></div>
+              </div>
+            </div>
+            <audio id="memory-audio-element"></audio>
+          </div>
+
+          <!-- Video Player Template -->
+          <div id="memory-video-player" class="hidden w-full aspect-video rounded-xl overflow-hidden bg-black/60 relative">
+            <video id="memory-video-element" class="w-full h-full object-cover" controls></video>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 4: MUSEO (POLAROID GALLERY) ================= -->
+  <section id="sec-museo" class="page-section py-28 px-4 flex flex-col justify-start">
+    <div class="museum-wall"></div>
+    <div class="text-center mb-16 max-w-xl mx-auto z-10">
+      <h2 class="serif-title text-4xl tracking-widest text-white mb-3">El Museo Silencioso</h2>
+      <p class="text-xs uppercase tracking-widest text-neon-cyan/70 font-light">Una galería sin palabras. Haz clic en las imágenes para sumergirte.</p>
+    </div>
+
+    <!-- 3D Louvre Gallery Viewport -->
+    <div id="louvre-3d-viewport" class="louvre-viewport mx-auto z-10">
+      <div class="louvre-scene" id="museum-gallery-grid">
+        <!-- Generated via JS -->
+      </div>
+    </div>
+
+    <!-- Louvre 3D Controller Navigation -->
+    <div class="louvre-controls mt-6 z-20 flex items-center justify-center gap-6">
+      <span id="louvre-index-tracker" class="text-sm font-semibold tracking-widest text-white/70 min-w-[70px] text-center font-mono">0 / 0</span>
+    </div>
+
+    <!-- Photo Zoom Lightbox with audio support -->
+    <div id="museum-lightbox" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+      <div class="absolute inset-0 bg-space/95 backdrop-blur-lg z-10 cursor-pointer" id="lightbox-bg" onclick="closeLightbox()"></div>
+      <button class="absolute top-6 right-6 w-12 h-12 rounded-full bg-space-light/80 border border-white/10 text-white hover:text-neon-cyan flex items-center justify-center hover:scale-105 transition-all text-3xl font-light z-30 shadow-lg cursor-pointer" id="btn-close-lightbox" title="Cerrar" onclick="closeLightbox()">
+        &times;
+      </button>
+      
+      <div class="lightbox-content z-20 max-w-4xl max-h-[85vh] flex flex-col items-center gap-6 relative">
+        <img id="lightbox-img" class="max-w-full max-h-[70vh] object-contain rounded border border-white/10 shadow-2xl shadow-neon-cyan/10" src="" alt="Zoom Foto Museo">
+        
+        <!-- Lightbox Audio Player -->
+        <div id="lightbox-audio-player" class="hidden flex items-center gap-4 bg-space-light/80 border border-white/10 px-6 py-3 rounded-full backdrop-blur">
+          <button id="btn-lightbox-play" class="w-10 h-10 rounded-full bg-neon-cyan text-space flex items-center justify-center hover:scale-105 transition-all">
+            <i class="fas fa-play ml-1"></i>
+          </button>
+          <span class="text-xs font-semibold text-white tracking-wider mr-2">Audio del Recuerdo</span>
+          <audio id="lightbox-audio-element"></audio>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 5: GALERÍA DE VÍDEOS (NETFLIX GRID) ================= -->
+  <section id="sec-videos" class="page-section py-28 px-4 flex flex-col justify-start">
+    <div class="text-center mb-16 max-w-xl mx-auto">
+      <h2 class="serif-title text-4xl tracking-widest text-white mb-3">Galería Cinematográfica</h2>
+      <p class="text-xs uppercase tracking-widest text-neon-cyan/70 font-light">Nuestra historia narrada en movimiento.</p>
+    </div>
+
+    <!-- Videos Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full max-w-6xl mx-auto px-6" id="video-gallery-grid">
+      <!-- Generated via JS -->
+    </div>
+
+    <!-- Video Theater Lightbox -->
+    <div id="theater-lightbox" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+      <div class="absolute inset-0 bg-space/95 backdrop-blur-xl z-10 cursor-pointer" id="theater-bg" onclick="closeTheater()"></div>
+      <button class="absolute top-6 right-6 w-12 h-12 rounded-full bg-space-light/80 border border-white/10 text-white hover:text-neon-cyan flex items-center justify-center hover:scale-105 transition-all text-3xl font-light z-30 shadow-lg cursor-pointer" id="btn-close-theater" title="Cerrar" onclick="closeTheater()">
+        &times;
+      </button>
+      
+      <div class="lightbox-content z-20 w-full max-w-4xl aspect-video rounded-xl overflow-hidden bg-black shadow-2xl border border-white/10 relative">
+        <video id="theater-video-element" class="w-full h-full object-contain" controls autoplay></video>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 6: ARCHIVO ALEATORIO (RANDOM GENERATOR) ================= -->
+  <section id="sec-archivo" class="page-section">
+    <div class="w-full max-w-2xl px-6 text-center flex flex-col items-center justify-center min-h-[80vh]">
+      <h2 class="serif-title text-4xl tracking-widest text-white mb-4">El Archivo de la Memoria</h2>
+      <p class="text-sm font-light text-gray-400 mb-12 max-w-md">Una inmersión aleatoria en el tiempo. Pulsa el orbe para revivir un fragmento del infinito.</p>
+      
+      <!-- Interactive Generator Orb -->
+      <div class="relative mb-12 cursor-pointer group" id="btn-generate-random">
+        <div class="absolute inset-0 w-32 h-32 bg-neon-cyan/20 rounded-full blur-xl group-hover:bg-neon-purple/30 group-hover:scale-110 transition-all duration-700 animate-pulse"></div>
+        <div class="w-32 h-32 rounded-full glass-premium border border-neon-cyan/40 flex items-center justify-center group-hover:border-neon-purple transition-all duration-500 scale-95 group-hover:scale-100 shadow-inner">
+          <i class="fas fa-atom text-4xl text-neon-cyan group-hover:text-neon-purple group-hover:rotate-180 transition-all duration-1000"></i>
+        </div>
+      </div>
+      
+      <span class="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-6">Generador de Recuerdos</span>
+
+      <!-- Container where random item will be rendered -->
+      <div id="random-memory-container" class="w-full min-h-[250px] p-6 rounded-xl glass-premium border border-white/5 flex items-center justify-center text-center transition-all duration-500 hidden">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 7: FINAL (MEMORIES COLLIDE) ================= -->
+  <section id="sec-final" class="page-section">
+    <div class="container max-w-4xl px-6 flex flex-col items-center justify-center text-center">
+      
+      <!-- Stage 1: Collide Trigger -->
+      <div id="final-stage-collide" class="flex flex-col items-center gap-6">
+        <div class="w-20 h-20 rounded-full bg-neon-cyan/10 flex items-center justify-center border border-neon-cyan/30 animate-bounce cursor-pointer hover:bg-neon-cyan/20 transition-all duration-300" id="btn-merge-stars">
+          <i class="fas fa-compress-arrows-alt text-2xl text-neon-cyan neon-star-glow"></i>
+        </div>
+        <h3 class="serif-title text-3xl text-gray-200 tracking-wider">Unir las Estrellas</h3>
+        <p class="text-sm font-light text-gray-400 max-w-xs">Funde todos nuestros recuerdos para revelar el final de la constelación.</p>
+      </div>
+
+      <!-- Stage 2: Cinema (Final Video) -->
+      <div id="final-stage-video" class="w-full max-w-3xl aspect-video rounded-xl overflow-hidden bg-black border border-white/10 shadow-2xl relative hidden mb-8">
+        <video id="final-video-element" class="w-full h-full object-cover"></video>
+        <button id="btn-skip-final-video" class="absolute bottom-4 right-4 bg-space/70 border border-white/20 text-xs px-4 py-2 rounded-full uppercase tracking-widest hover:bg-white hover:text-space transition-colors z-20">
+          Saltar Vídeo
+        </button>
+      </div>
+
+      <!-- Stage 3: The Letter & Counter -->
+      <div id="final-stage-letter" class="w-full max-w-2xl p-8 rounded-2xl glass-premium flex flex-col items-center gap-8 text-center hidden">
+        <div class="relative">
+          <i class="fas fa-heart text-5xl text-neon-purple neon-star-glow animate-pulse"></i>
+        </div>
+        
+        <!-- Interactive Letter Container -->
+        <div class="w-full max-h-[300px] overflow-y-auto pr-2">
+          <p id="final-letter-text" class="serif-title text-xl md:text-2xl text-gray-100 leading-loose italic cursor-blink whitespace-pre-wrap"></p>
+        </div>
+
+        <div class="w-16 h-px bg-white/20 my-2"></div>
+
+        <!-- Relationship Counter -->
+        <div class="w-full flex flex-col gap-2">
+          <span class="text-xs uppercase tracking-widest text-neon-cyan font-semibold">Tiempo Recorrido Juntos</span>
+          <div id="relationship-counter" class="grid grid-cols-3 sm:grid-cols-6 gap-2 text-center mt-2">
+            <div class="bg-space/60 p-2.5 rounded-lg border border-white/5">
+              <span id="counter-years" class="block text-2xl md:text-3xl font-bold text-white">00</span>
+              <span class="text-[9px] uppercase tracking-wider text-gray-400">Años</span>
+            </div>
+            <div class="bg-space/60 p-2.5 rounded-lg border border-white/5">
+              <span id="counter-months" class="block text-2xl md:text-3xl font-bold text-white">00</span>
+              <span class="text-[9px] uppercase tracking-wider text-gray-400">Meses</span>
+            </div>
+            <div class="bg-space/60 p-2.5 rounded-lg border border-white/5">
+              <span id="counter-days" class="block text-2xl md:text-3xl font-bold text-white">00</span>
+              <span class="text-[9px] uppercase tracking-wider text-gray-400">Días</span>
+            </div>
+            <div class="bg-space/60 p-2.5 rounded-lg border border-white/5">
+              <span id="counter-hours" class="block text-2xl md:text-3xl font-bold text-white">00</span>
+              <span class="text-[9px] uppercase tracking-wider text-gray-400">Horas</span>
+            </div>
+            <div class="bg-space/60 p-2.5 rounded-lg border border-white/5">
+              <span id="counter-minutes" class="block text-2xl md:text-3xl font-bold text-white">00</span>
+              <span class="text-[9px] uppercase tracking-wider text-gray-400">Minutos</span>
+            </div>
+            <div class="bg-space/60 p-2.5 rounded-lg border border-white/5">
+              <span id="counter-seconds" class="block text-2xl md:text-3xl font-bold text-white">00</span>
+              <span class="text-[9px] uppercase tracking-wider text-gray-400">Segundos</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 8: PANEL DE ADMINISTRACIÓN ================= -->
+  <section id="sec-admin-login" class="page-section">
+    <div class="w-full max-w-sm p-8 rounded-2xl glass-premium text-center flex flex-col items-center">
+      <i class="fas fa-user-shield text-5xl text-neon-purple mb-6 animate-pulse"></i>
+      <h2 class="serif-title text-3xl mb-3 text-white tracking-wider">Acceso de Administrador</h2>
+      <p class="text-gray-400 text-xs mb-6 font-light">Ingrese sus credenciales de administración.</p>
+      
+      <form id="form-admin-login" class="w-full flex flex-col gap-4">
+        <div class="flex flex-col text-left mb-2">
+          <input type="password" id="admin-pass" class="w-full px-4 py-3 rounded-lg glass-input text-sm tracking-wide" placeholder="Contraseña de Administrador" required>
+        </div>
+        <div id="admin-login-error" class="text-red-400 text-xs hidden font-light">Contraseña incorrecta</div>
+        <button type="submit" class="w-full py-3 bg-neon-purple text-white font-semibold uppercase tracking-widest text-xs rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300">
+          Autenticar Admin
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ADMIN DASHBOARD PANEL -->
+  <section id="sec-admin" class="page-section py-28 px-4 flex flex-col justify-start">
+    <div class="w-full max-w-6xl mx-auto flex flex-col gap-8">
+      
+      <!-- Admin Header -->
+      <div class="flex justify-between items-center bg-white/5 border border-white/10 p-6 rounded-xl backdrop-blur">
+        <div>
+          <h2 class="serif-title text-3xl text-white">Panel de Control de la Constelación</h2>
+          <p class="text-xs text-neon-cyan tracking-wider font-light mt-1">Sube contenido y personaliza tu historia interactiva.</p>
+        </div>
+        <div class="flex gap-4">
+          <button id="btn-admin-logout" class="px-4 py-2 border border-red-500/40 text-red-400 hover:bg-red-500 hover:text-white transition-all rounded-lg text-xs font-semibold">
+            Salir Admin
+          </button>
+          <a href="#/universo" class="px-4 py-2 bg-neon-cyan text-space hover:bg-white transition-all rounded-lg text-xs font-semibold flex items-center gap-2">
+            Ver Web <i class="fas fa-external-link-alt text-[10px]"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- Main Columns -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Side: Forms (Uploads & Database creations) -->
+        <div class="lg:col-span-5 flex flex-col gap-6">
+          
+          <!-- Tabbed selector for submodules -->
+          <div class="glass-premium p-6 rounded-xl flex flex-col gap-6">
+            <div class="flex border-b border-white/10 pb-4 justify-around">
+              <button id="tab-btn-media" class="text-xs uppercase tracking-wider font-semibold text-neon-cyan border-b-2 border-neon-cyan pb-2 px-2">Subir Multimedia</button>
+              <button id="tab-btn-memory" class="text-xs uppercase tracking-wider font-semibold text-gray-400 hover:text-white pb-2 px-2 transition-colors">Crear Recuerdo</button>
+              <button id="tab-btn-system" class="text-xs uppercase tracking-wider font-semibold text-gray-400 hover:text-white pb-2 px-2 transition-colors">Sistema</button>
+            </div>
+
+            <!-- Tab 1: Upload media -->
+            <form id="admin-media-form" class="flex flex-col gap-4">
+              <div class="flex flex-col">
+                <label class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-2">Archivos (Upload Múltiple)</label>
+                <input type="file" id="media-files" class="w-full px-4 py-3 rounded-lg glass-input text-xs" multiple accept="image/*,video/*,audio/*" required>
+              </div>
+
+              <div class="flex flex-col">
+                <label class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-2">Asignar a Sección</label>
+                <select id="media-section" class="w-full px-4 py-3 rounded-lg glass-input text-xs cursor-pointer">
+                  <option value="universe">Universo (Máx 1 Foto)</option>
+                  <option value="museum" selected>Museo (Fotos, Máx 50)</option>
+                  <option value="video-gallery">Galería de Vídeos (Vídeos, Máx 24)</option>
+                </select>
+              </div>
+
+              <!-- Optional audio link input for museum photos -->
+              <div id="museum-audio-select-container" class="flex flex-col">
+                <label class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-2">Asociar Audio Opcional (Mensaje de voz)</label>
+                <input type="file" id="museum-audio-file" class="w-full px-4 py-3 rounded-lg glass-input text-xs" accept="audio/*">
+                <span class="text-[10px] text-gray-500 mt-1">Sube un audio que se reproducirá al hacer clic en esta foto en el Museo.</span>
+              </div>
+
+              <button type="submit" class="w-full py-3 bg-neon-cyan text-space font-semibold uppercase tracking-widest text-xs rounded-lg hover:bg-white transition-all shadow-md shadow-neon-cyan/10 mt-2">
+                Subir Archivos
+              </button>
+            </form>
+
+            <!-- Tab 2: Create memory -->
+            <form id="admin-memory-form" class="flex flex-col gap-4 hidden">
+              <div class="flex flex-col">
+                <label class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-2">Título de la Memoria</label>
+                <input type="text" id="memory-form-title" class="w-full px-4 py-3 rounded-lg glass-input text-xs" placeholder="Ej. Nuestro primer café juntos" required>
+              </div>
+
+              <div class="flex flex-col">
+                <label class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-2">Fecha (Para orden cronológico)</label>
+                <input type="date" id="memory-form-date" class="w-full px-4 py-3 rounded-lg glass-input text-xs" required>
+              </div>
+
+              <div class="flex flex-col">
+                <label class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-2">Descripción corta del recuerdo</label>
+                <textarea id="memory-form-text" class="w-full px-4 py-3 rounded-lg glass-input text-xs h-24" placeholder="Describe lo que sentiste en ese momento..." required></textarea>
+              </div>
+
+              <div class="flex flex-col">
+                <label class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-2">Audio o Vídeo Asociado (Opcional)</label>
+                <input type="file" id="memory-form-media" class="w-full px-4 py-3 rounded-lg glass-input text-xs" accept="video/*,audio/*">
+                <span class="text-[10px] text-gray-500 mt-1">Este archivo multimedia se reproducirá dentro del modal al abrir la estrella en la constelación.</span>
+              </div>
+
+              <button type="submit" class="w-full py-3 bg-neon-purple text-white font-semibold uppercase tracking-widest text-xs rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 mt-2">
+                Crear Estrella / Recuerdo
+              </button>
+            </form>
+
+            <!-- Tab 3: System (Backup & Final Configuration) -->
+            <div id="admin-system-settings" class="flex flex-col gap-6 hidden">
+              <!-- Backup options -->
+              <div>
+                <h4 class="text-sm font-semibold text-white mb-2">Copia de Seguridad de la Web</h4>
+                <p class="text-xs text-gray-400 mb-4 leading-relaxed">IndexedDB guarda todos los archivos y recuerdos en la caché local del navegador de esta máquina. Exporta un respaldo para no perder tu información si limpias la caché.</p>
+                <div class="flex flex-col gap-3">
+                  <button id="btn-export-backup" class="w-full py-2.5 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 hover:border-zinc-600 transition-all rounded-lg text-xs font-semibold text-white flex items-center justify-center gap-2">
+                    <i class="fas fa-file-download"></i> Exportar Copia de Seguridad
+                  </button>
+                  <div class="flex flex-col gap-2 border-t border-white/5 pt-3">
+                    <label class="text-xs font-semibold text-gray-400">Restaurar Copia de Seguridad</label>
+                    <input type="file" id="backup-file-input" class="w-full px-3 py-2 rounded-lg glass-input text-xs" accept=".json">
+                    <button id="btn-import-backup" class="w-full py-2 bg-neon-cyan/20 border border-neon-cyan/30 text-neon-cyan hover:bg-neon-cyan hover:text-space hover:border-neon-cyan transition-all rounded-lg text-xs font-semibold mt-1">
+                      Restaurar desde archivo
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Final letter configuration -->
+              <div class="border-t border-white/10 pt-4">
+                <h4 class="text-sm font-semibold text-white mb-2">Carta del Final</h4>
+                <div class="flex flex-col gap-3">
+                  <textarea id="final-letter-input" class="w-full px-4 py-3 rounded-lg glass-input text-xs h-28" placeholder="Escribe aquí la carta del final que se escribirá dinámicamente..."></textarea>
+                  <div class="flex flex-col">
+                    <label class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-2">Fecha del Aniversario (Contador)</label>
+                    <input type="datetime-local" id="anniversary-date-input" class="w-full px-4 py-3 rounded-lg glass-input text-xs" required>
+                  </div>
+                  <button id="btn-save-final-letter" class="w-full py-2 bg-neon-purple text-white hover:scale-[1.02] active:scale-[0.98] transition-all rounded-lg text-xs font-semibold uppercase tracking-wider">
+                    Guardar Configuración Final
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Quick Statistics Status -->
+          <div class="glass p-6 rounded-xl">
+            <h4 class="text-xs uppercase tracking-widest text-neon-cyan font-bold mb-4">Estado de los Módulos</h4>
+            <ul class="flex flex-col gap-3 text-xs text-gray-300">
+              <li class="flex justify-between border-b border-white/5 pb-2">
+                <span>Foto Universo Clave:</span>
+                <span id="stat-universe" class="font-semibold text-white">No configurada</span>
+              </li>
+              <li class="flex justify-between border-b border-white/5 pb-2">
+                <span>Fotos en Museo:</span>
+                <span class="font-semibold text-white"><span id="stat-museum-count">0</span> / 50</span>
+              </li>
+              <li class="flex justify-between border-b border-white/5 pb-2">
+                <span>Vídeos en Galería:</span>
+                <span class="font-semibold text-white"><span id="stat-video-count">0</span> / 24</span>
+              </li>
+              <li class="flex justify-between pb-1">
+                <span>Estrellas / Recuerdos:</span>
+                <span id="stat-memory-count" class="font-semibold text-white">0 creados</span>
+              </li>
+            </ul>
+          </div>
+
+        </div>
+
+        <!-- Right Side: Existing Content Manager list -->
+        <div class="lg:col-span-7 flex flex-col gap-6">
+          <div class="glass-premium p-6 rounded-xl flex-1 flex flex-col min-h-[500px]">
+            <h3 class="serif-title text-2xl text-white mb-4">Elementos Almacenados</h3>
+            
+            <div class="flex gap-4 border-b border-white/10 pb-3 mb-4 text-xs font-semibold text-gray-400">
+              <button id="filter-btn-all" class="text-neon-cyan border-b-2 border-neon-cyan pb-2">Todos</button>
+              <button id="filter-btn-universe" class="hover:text-white pb-2 transition-colors">Universo</button>
+              <button id="filter-btn-museum" class="hover:text-white pb-2 transition-colors">Museo</button>
+              <button id="filter-btn-timeline" class="hover:text-white pb-2 transition-colors">Constelación</button>
+              <button id="filter-btn-video" class="hover:text-white pb-2 transition-colors">Vídeos</button>
+            </div>
+
+            <!-- List scroll container -->
+            <div class="flex-1 overflow-y-auto max-h-[600px] pr-2 flex flex-col gap-3" id="admin-items-list">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Core JavaScript Logics -->
+  <script src="app.js?v=3"></script>
+</body>
+</html>
