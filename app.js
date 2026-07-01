@@ -1248,7 +1248,10 @@ async function setupFinalSection() {
 
   // Show Stage 1
   document.getElementById('final-stage-collide').classList.remove('hidden');
-  document.getElementById('final-stage-video').classList.add('hidden');
+  const stageVideo = document.getElementById('final-stage-video');
+  if (stageVideo) {
+    stageVideo.classList.add('hidden');
+  }
   document.getElementById('final-stage-letter').classList.add('hidden');
 }
 
