@@ -599,22 +599,26 @@ async function setupUniverseSection() {
 
 // 2. Labyrinth 3D Section (Interactive 3D Memories Maze)
 const mazeMap = [
-  [1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 0, 0, 0, 1, 0, 0, 1],
-  [1, 0, 1, 0, 1, 0, 1, 1],
-  [1, 0, 1, 0, 0, 0, 0, 1],
-  [1, 0, 1, 1, 1, 1, 0, 1],
-  [1, 0, 0, 0, 0, 1, 0, 1],
-  [1, 1, 1, 0, 0, 0, 0, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1]
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
+  [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+  [1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+  [1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+  [1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1],
+  [1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1],
+  [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
 
 const mazePlayer = {
   x: 1.5,
   y: 1.5,
   yaw: 0, // direction angle in radians
-  speed: 0.05,
-  rotSpeed: 0.04,
+  speed: 0.035, // Slower movement speed (was 0.05)
+  rotSpeed: 0.03, // Slower rotation speed (was 0.04)
   radius: 0.25
 };
 
@@ -625,7 +629,7 @@ async function setupConstellationSection() {
   const world = document.getElementById('labyrinth-world');
   if (!world) return;
   
-  // Clear any existing walls
+  // Clear any existing elements
   world.innerHTML = '';
   
   // Hide success overlay
@@ -641,13 +645,25 @@ async function setupConstellationSection() {
   const media = await dbGetAllMedia();
   const photos = media.filter(m => m.section === 'museum' && m.type.startsWith('image/'));
   
-  // Render Maze Walls in 3D
   const CELL_SIZE = 400;
+  
+  // Render Floor Plane
+  const floor = document.createElement('div');
+  floor.className = 'maze-floor-plane';
+  floor.style.transform = `translate3d(${6 * CELL_SIZE}px, 300px, ${-6 * CELL_SIZE}px) rotateX(90deg)`;
+  world.appendChild(floor);
+
+  // Render Ceiling Plane
+  const ceiling = document.createElement('div');
+  ceiling.className = 'maze-ceiling-plane';
+  ceiling.style.transform = `translate3d(${6 * CELL_SIZE}px, -300px, ${-6 * CELL_SIZE}px) rotateX(90deg)`;
+  world.appendChild(ceiling);
+  
+  // Render Maze Walls in 3D (12x12 grid)
   let photoIndex = 0;
   
-  // Iterate through map cells to generate vertical/horizontal walls
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
+  for (let r = 0; r < 12; r++) {
+    for (let c = 0; c < 12; c++) {
       // Horizontal wall: top boundary of cell
       if (r > 0 && ((mazeMap[r][c] === 1) !== (mazeMap[r-1][c] === 1))) {
         createMazeWall(c * CELL_SIZE + CELL_SIZE / 2, -r * CELL_SIZE, 0, photos, photoIndex++);
@@ -659,14 +675,14 @@ async function setupConstellationSection() {
     }
   }
   
-  // Render outer boundary walls (row 0, row 8, col 0, col 8)
-  for (let c = 0; c < 8; c++) {
+  // Render outer boundary walls (row 0, row 12, col 0, col 12)
+  for (let c = 0; c < 12; c++) {
     createMazeWall(c * CELL_SIZE + CELL_SIZE / 2, 0, 0, photos, photoIndex++);
-    createMazeWall(c * CELL_SIZE + CELL_SIZE / 2, -8 * CELL_SIZE, 0, photos, photoIndex++);
+    createMazeWall(c * CELL_SIZE + CELL_SIZE / 2, -12 * CELL_SIZE, 0, photos, photoIndex++);
   }
-  for (let r = 0; r < 8; r++) {
+  for (let r = 0; r < 12; r++) {
     createMazeWall(0, -r * CELL_SIZE - CELL_SIZE / 2, 90, photos, photoIndex++);
-    createMazeWall(8 * CELL_SIZE, -r * CELL_SIZE - CELL_SIZE / 2, 90, photos, photoIndex++);
+    createMazeWall(12 * CELL_SIZE, -r * CELL_SIZE - CELL_SIZE / 2, 90, photos, photoIndex++);
   }
   
   // Keyboard Listeners
@@ -686,7 +702,7 @@ function createMazeWall(x, z, angle, photos, wallIndex) {
   wall.className = 'maze-wall';
   wall.style.transform = `translate3d(${x}px, 0px, ${z}px) rotateY(${angle}deg)`;
   
-  // Decide whether to put a photo on this wall (e.g. every 3rd wall, if photos are available)
+  // Place photos on every 3rd wall, if photos are available
   if (photos.length > 0 && wallIndex % 3 === 0) {
     const photo = photos[wallIndex % photos.length];
     const url = getMediaUrl(photo);
@@ -744,12 +760,12 @@ function updateLabyrinth() {
   const nx = mazePlayer.x + dx;
   const ny = mazePlayer.y + dy;
   
-  // Check collision along X axis
-  if (nx > 0 && nx < 8 && mazeMap[Math.floor(mazePlayer.y)][Math.floor(nx + Math.sign(dx) * mazePlayer.radius)] !== 1) {
+  // Check collision along X axis (boundary: 12 cells)
+  if (nx > 0 && nx < 12 && mazeMap[Math.floor(mazePlayer.y)][Math.floor(nx + Math.sign(dx) * mazePlayer.radius)] !== 1) {
     mazePlayer.x = nx;
   }
-  // Check collision along Y axis
-  if (ny > 0 && ny < 8 && mazeMap[Math.floor(ny + Math.sign(dy) * mazePlayer.radius)][Math.floor(mazePlayer.x)] !== 1) {
+  // Check collision along Y axis (boundary: 12 cells)
+  if (ny > 0 && ny < 12 && mazeMap[Math.floor(ny + Math.sign(dy) * mazePlayer.radius)][Math.floor(mazePlayer.x)] !== 1) {
     mazePlayer.y = ny;
   }
   
@@ -765,11 +781,8 @@ function updateLabyrinth() {
     world.style.transform = `translate3d(50vw, 50vh, 300px) rotateX(0deg) rotateY(${angleDeg}deg) translate3d(${-tx}px, 0px, ${-tz}px)`;
   }
   
-  // 3. Render Minimap
-  drawLabyrinthMinimap();
-  
-  // 4. Check Exit
-  const distToExit = Math.hypot(mazePlayer.x - 6.5, mazePlayer.y - 1.5);
+  // 3. Check Exit (Target cell: column 10, row 10)
+  const distToExit = Math.hypot(mazePlayer.x - 10.5, mazePlayer.y - 10.5);
   if (distToExit < 0.4) {
     const successOverlay = document.getElementById('labyrinth-success-overlay');
     if (successOverlay && successOverlay.classList.contains('hidden')) {
@@ -779,50 +792,6 @@ function updateLabyrinth() {
   }
   
   mazeLoopId = requestAnimationFrame(updateLabyrinth);
-}
-
-function drawLabyrinthMinimap() {
-  const canvas = document.getElementById('minimap-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
-  const cellSize = canvas.width / 8;
-  
-  // Draw grid cells
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
-      if (mazeMap[r][c] === 1) {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-        ctx.fillRect(c * cellSize, r * cellSize, cellSize - 1, cellSize - 1);
-      } else {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-        ctx.fillRect(c * cellSize, r * cellSize, cellSize - 1, cellSize - 1);
-      }
-    }
-  }
-  
-  // Draw exit point (Green glowing dot)
-  ctx.fillStyle = '#10b981';
-  ctx.beginPath();
-  ctx.arc((6 + 0.5) * cellSize, (1 + 0.5) * cellSize, cellSize / 3, 0, Math.PI * 2);
-  ctx.fill();
-  
-  // Draw player (Cyan dot with direction needle)
-  const px = mazePlayer.x * cellSize;
-  const py = mazePlayer.y * cellSize;
-  
-  ctx.fillStyle = '#00f2ff';
-  ctx.beginPath();
-  ctx.arc(px, py, cellSize / 4, 0, Math.PI * 2);
-  ctx.fill();
-  
-  ctx.strokeStyle = '#00f2ff';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(px, py);
-  ctx.lineTo(px + Math.sin(mazePlayer.yaw) * (cellSize * 0.8), py - Math.cos(mazePlayer.yaw) * (cellSize * 0.8));
-  ctx.stroke();
 }
 
 // 3. Museo Section (Louvre Museum 3D Square Room version)
@@ -1162,8 +1131,8 @@ async function setupVideoSection() {
 
     card.innerHTML = `
       <div class="movie-poster-item-thumb">
-        <!-- Native video t=1 thumbnail cover -->
-        <video src="${url}#t=1" preload="metadata" muted class="w-full h-full object-cover"></video>
+        <!-- Living cinemagraph autoplay preview with object-contain to avoid crops -->
+        <video src="${url}" preload="auto" autoplay loop muted playsinline class="w-full h-full object-contain"></video>
         <div class="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-[10px] text-neon-cyan border border-neon-cyan/30">
           <i class="fas fa-play" style="font-size: 8px; margin-left: 2px; color: var(--color-accent);"></i>
         </div>

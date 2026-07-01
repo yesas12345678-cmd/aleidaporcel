@@ -160,12 +160,6 @@
         </div>
       </div>
       
-      <!-- Mini-map in top-right corner to help navigation -->
-      <div id="labyrinth-minimap" class="absolute top-24 right-6 p-3 glass-premium rounded-xl z-20 border border-white/10 w-28 h-28 flex flex-col items-center justify-center">
-        <canvas id="minimap-canvas" width="80" height="80"></canvas>
-        <span class="text-[8px] uppercase tracking-widest text-neon-cyan/70 mt-1">Mapa del Laberinto</span>
-      </div>
-
       <!-- Labyrinth Overlay / Success message -->
       <div id="labyrinth-success-overlay" class="absolute inset-0 bg-space/95 backdrop-blur-md flex flex-col items-center justify-center z-30 hidden">
         <div class="glass-premium p-8 rounded-2xl max-w-md text-center border border-neon-cyan/30 shadow-2xl">
@@ -182,7 +176,7 @@
       <div id="labyrinth-instructions" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 glass-premium px-4 py-2 rounded-full z-20 text-[9px] text-gray-300 uppercase tracking-widest flex items-center gap-3">
         <span>Moverse: <b class="text-neon-cyan">W A S D</b> o <b class="text-neon-cyan">Flechas</b></span>
         <span class="text-white/20">|</span>
-        <span>Meta: Llegar al punto verde en el mapa</span>
+        <span>Meta: Encuentra la Salida</span>
       </div>
     </div>
   </section>
@@ -240,7 +234,7 @@
         
         <!-- The Projection Screen overlay -->
         <div class="pov-screen shadow-2xl cursor-pointer">
-          <video id="theater-video-element" class="w-full h-full object-cover bg-black"></video>
+          <video id="theater-video-element" class="w-full h-full object-contain bg-black"></video>
           
           <!-- Cinema Curtains inside the screen -->
           <div class="pov-curtain curtain-left"></div>
