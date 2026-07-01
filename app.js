@@ -597,161 +597,232 @@ async function setupUniverseSection() {
   }, 10000);
 }
 
-// 2. Comedor 3D Section (Interactive 3D Room of Memories)
-let isDraggingRoom = false;
-let previousMousePosition = { x: 0, y: 0 };
-let roomRotation = { x: -10, y: 0 }; // starting angles (tilt down slightly)
-let isZoomedIn = false;
+// 2. Labyrinth 3D Section (Interactive 3D Memories Maze)
+const mazeMap = [
+  [1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 0, 0, 0, 1, 0, 0, 1],
+  [1, 0, 1, 0, 1, 0, 1, 1],
+  [1, 0, 1, 0, 0, 0, 0, 1],
+  [1, 0, 1, 1, 1, 1, 0, 1],
+  [1, 0, 0, 0, 0, 1, 0, 1],
+  [1, 1, 1, 0, 0, 0, 0, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1]
+];
+
+const mazePlayer = {
+  x: 1.5,
+  y: 1.5,
+  yaw: 0, // direction angle in radians
+  speed: 0.05,
+  rotSpeed: 0.04,
+  radius: 0.25
+};
+
+const mazeKeys = {};
+let mazeLoopId = null;
 
 async function setupConstellationSection() {
-  const viewport = document.getElementById('dining-room-viewport');
-  if (!viewport) return;
-
-  // Reset rotation to front view
-  roomRotation = { x: -10, y: 0 };
-  updateRoomTransform();
-
-  // Load photos dynamically from database
-  await populateDiningRoomPhotos();
-
-  // Mouse Drag to Rotate
-  viewport.onmousedown = (e) => {
-    isDraggingRoom = true;
-    previousMousePosition = { x: e.clientX, y: e.clientY };
-  };
-
-  window.onmousemove = (e) => {
-    if (!isDraggingRoom) return;
-
-    const deltaMove = {
-      x: e.clientX - previousMousePosition.x,
-      y: e.clientY - previousMousePosition.y
-    };
-
-    // Rotate Y corresponds to horizontal drag (left/right)
-    // Rotate X corresponds to vertical drag (up/down)
-    roomRotation.y += deltaMove.x * 0.4;
-    roomRotation.x = Math.max(-45, Math.min(45, roomRotation.x - deltaMove.y * 0.4)); // bound vertical tilt
-
-    updateRoomTransform();
-
-    previousMousePosition = { x: e.clientX, y: e.clientY };
-  };
-
-  window.onmouseup = () => {
-    isDraggingRoom = false;
-  };
-
-  // Touch Events for Mobile
-  viewport.ontouchstart = (e) => {
-    isDraggingRoom = true;
-    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-  };
-
-  viewport.ontouchmove = (e) => {
-    if (!isDraggingRoom) return;
-
-    const deltaMove = {
-      x: e.touches[0].clientX - previousMousePosition.x,
-      y: e.touches[0].clientY - previousMousePosition.y
-    };
-
-    roomRotation.y += deltaMove.x * 0.4;
-    roomRotation.x = Math.max(-45, Math.min(45, roomRotation.x - deltaMove.y * 0.4));
-
-    updateRoomTransform();
-
-    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-  };
-
-  viewport.ontouchend = () => {
-    isDraggingRoom = false;
-  };
-}
-
-function updateRoomTransform() {
-  const room = document.getElementById('dining-room-element');
-  if (room) {
-    room.style.transform = `rotateX(${roomRotation.x}deg) rotateY(${roomRotation.y}deg)`;
-  }
-}
-
-async function populateDiningRoomPhotos() {
-  const wallBack = document.getElementById('room-wall-back');
-  const wallLeft = document.getElementById('room-wall-left');
-  const wallRight = document.getElementById('room-wall-right');
-  const tableTop = document.getElementById('dining-table-top');
-
-  if (!wallBack || !wallLeft || !wallRight || !tableTop) return;
-
-  // Clear existing items inside them
-  wallBack.innerHTML = '';
-  wallLeft.innerHTML = '';
-  wallRight.innerHTML = '';
-  tableTop.innerHTML = '';
-
+  const world = document.getElementById('labyrinth-world');
+  if (!world) return;
+  
+  // Clear any existing walls
+  world.innerHTML = '';
+  
+  // Hide success overlay
+  const successOverlay = document.getElementById('labyrinth-success-overlay');
+  if (successOverlay) successOverlay.classList.add('hidden');
+  
+  // Reset player position & angle
+  mazePlayer.x = 1.5;
+  mazePlayer.y = 1.5;
+  mazePlayer.yaw = 0;
+  
+  // Fetch photos from DB
   const media = await dbGetAllMedia();
   const photos = media.filter(m => m.section === 'museum' && m.type.startsWith('image/'));
-
-  // Define frames layout for walls
-  // Wall Back can have 4 frames, Left Wall 2 frames, Right Wall 2 frames
-  const wallsLayout = [
-    { container: wallBack, count: 4, className: 'frame-back' },
-    { container: wallLeft, count: 2, className: 'frame-left' },
-    { container: wallRight, count: 2, className: 'frame-right' }
-  ];
-
+  
+  // Render Maze Walls in 3D
+  const CELL_SIZE = 400;
   let photoIndex = 0;
-
-  wallsLayout.forEach(layout => {
-    for (let i = 0; i < layout.count; i++) {
-      const frame = document.createElement('div');
-      frame.className = `picture-frame ${layout.className}-${i + 1}`;
-      
-      if (photos.length > 0) {
-        const photo = photos[photoIndex % photos.length];
-        const url = getMediaUrl(photo);
-        frame.innerHTML = `
-          <div class="frame-glass"></div>
-          <img src="${url}" alt="Recuerdo">
-          <div class="frame-border"></div>
-        `;
-        frame.onclick = (e) => {
-          e.stopPropagation(); // don't trigger drag
-          openLightbox(photo);
-        };
-        photoIndex++;
-      } else {
-        // Placeholder frame
-        frame.innerHTML = `
-          <div class="frame-glass"></div>
-          <div class="frame-placeholder">
-            <i class="fas fa-heart text-white/20 text-lg"></i>
-          </div>
-          <div class="frame-border"></div>
-        `;
+  
+  // Iterate through map cells to generate vertical/horizontal walls
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      // Horizontal wall: top boundary of cell
+      if (r > 0 && ((mazeMap[r][c] === 1) !== (mazeMap[r-1][c] === 1))) {
+        createMazeWall(c * CELL_SIZE + CELL_SIZE / 2, -r * CELL_SIZE, 0, photos, photoIndex++);
       }
-      layout.container.appendChild(frame);
+      // Vertical wall: left boundary of cell
+      if (c > 0 && ((mazeMap[r][c] === 1) !== (mazeMap[r][c-1] === 1))) {
+        createMazeWall(c * CELL_SIZE, -r * CELL_SIZE - CELL_SIZE / 2, 90, photos, photoIndex++);
+      }
     }
-  });
-
-  // Table Top: scattered photos
-  if (photos.length > 0) {
-    const tablePhoto = photos[photoIndex % photos.length];
-    const url = getMediaUrl(tablePhoto);
-    const photoOnTable = document.createElement('div');
-    photoOnTable.className = 'photo-on-table';
-    photoOnTable.innerHTML = `
-      <img src="${url}" alt="Foto en Mesa">
-    `;
-    photoOnTable.onclick = (e) => {
-      e.stopPropagation();
-      openLightbox(tablePhoto);
-    };
-    tableTop.appendChild(photoOnTable);
-  } else {
-    tableTop.innerHTML = '<div class="table-decoration"><i class="fas fa-seedling text-white/30 text-xs"></i></div>';
   }
+  
+  // Render outer boundary walls (row 0, row 8, col 0, col 8)
+  for (let c = 0; c < 8; c++) {
+    createMazeWall(c * CELL_SIZE + CELL_SIZE / 2, 0, 0, photos, photoIndex++);
+    createMazeWall(c * CELL_SIZE + CELL_SIZE / 2, -8 * CELL_SIZE, 0, photos, photoIndex++);
+  }
+  for (let r = 0; r < 8; r++) {
+    createMazeWall(0, -r * CELL_SIZE - CELL_SIZE / 2, 90, photos, photoIndex++);
+    createMazeWall(8 * CELL_SIZE, -r * CELL_SIZE - CELL_SIZE / 2, 90, photos, photoIndex++);
+  }
+  
+  // Keyboard Listeners
+  window.addEventListener('keydown', handleMazeKeyDown);
+  window.addEventListener('keyup', handleMazeKeyUp);
+  
+  // Start Game Loop
+  if (mazeLoopId) cancelAnimationFrame(mazeLoopId);
+  updateLabyrinth();
+}
+
+function createMazeWall(x, z, angle, photos, wallIndex) {
+  const world = document.getElementById('labyrinth-world');
+  if (!world) return;
+  
+  const wall = document.createElement('div');
+  wall.className = 'maze-wall';
+  wall.style.transform = `translate3d(${x}px, 0px, ${z}px) rotateY(${angle}deg)`;
+  
+  // Decide whether to put a photo on this wall (e.g. every 3rd wall, if photos are available)
+  if (photos.length > 0 && wallIndex % 3 === 0) {
+    const photo = photos[wallIndex % photos.length];
+    const url = getMediaUrl(photo);
+    
+    const frame = document.createElement('div');
+    frame.className = 'maze-picture-frame';
+    frame.innerHTML = `
+      <img src="${url}" alt="Recuerdo">
+    `;
+    frame.onclick = (e) => {
+      e.stopPropagation();
+      openLightbox(photo);
+    };
+    wall.appendChild(frame);
+  }
+  
+  world.appendChild(wall);
+}
+
+function handleMazeKeyDown(e) {
+  mazeKeys[e.key.toLowerCase()] = true;
+}
+
+function handleMazeKeyUp(e) {
+  mazeKeys[e.key.toLowerCase()] = false;
+}
+
+function updateLabyrinth() {
+  if (state.currentChapter !== 'constelacion') {
+    window.removeEventListener('keydown', handleMazeKeyDown);
+    window.removeEventListener('keyup', handleMazeKeyUp);
+    return;
+  }
+  
+  // 1. Move Player
+  let dx = 0;
+  let dy = 0;
+  
+  if (mazeKeys['w'] || mazeKeys['arrowup']) {
+    dx += Math.sin(mazePlayer.yaw) * mazePlayer.speed;
+    dy -= Math.cos(mazePlayer.yaw) * mazePlayer.speed;
+  }
+  if (mazeKeys['s'] || mazeKeys['arrowdown']) {
+    dx -= Math.sin(mazePlayer.yaw) * mazePlayer.speed;
+    dy += Math.cos(mazePlayer.yaw) * mazePlayer.speed;
+  }
+  if (mazeKeys['a'] || mazeKeys['arrowleft']) {
+    mazePlayer.yaw -= mazePlayer.rotSpeed;
+  }
+  if (mazeKeys['d'] || mazeKeys['arrowright']) {
+    mazePlayer.yaw += mazePlayer.rotSpeed;
+  }
+  
+  // Apply Collision Detection
+  const nx = mazePlayer.x + dx;
+  const ny = mazePlayer.y + dy;
+  
+  // Check collision along X axis
+  if (nx > 0 && nx < 8 && mazeMap[Math.floor(mazePlayer.y)][Math.floor(nx + Math.sign(dx) * mazePlayer.radius)] !== 1) {
+    mazePlayer.x = nx;
+  }
+  // Check collision along Y axis
+  if (ny > 0 && ny < 8 && mazeMap[Math.floor(ny + Math.sign(dy) * mazePlayer.radius)][Math.floor(mazePlayer.x)] !== 1) {
+    mazePlayer.y = ny;
+  }
+  
+  // 2. Center Camera in 3D
+  const world = document.getElementById('labyrinth-world');
+  if (world) {
+    const CELL_SIZE = 400;
+    const tx = mazePlayer.x * CELL_SIZE;
+    const tz = -mazePlayer.y * CELL_SIZE;
+    const angleDeg = -mazePlayer.yaw * (180 / Math.PI);
+    
+    // Position world: center screen (50% 50%) and translate camera opposite to player
+    world.style.transform = `translate3d(50vw, 50vh, 300px) rotateX(0deg) rotateY(${angleDeg}deg) translate3d(${-tx}px, 0px, ${-tz}px)`;
+  }
+  
+  // 3. Render Minimap
+  drawLabyrinthMinimap();
+  
+  // 4. Check Exit
+  const distToExit = Math.hypot(mazePlayer.x - 6.5, mazePlayer.y - 1.5);
+  if (distToExit < 0.4) {
+    const successOverlay = document.getElementById('labyrinth-success-overlay');
+    if (successOverlay && successOverlay.classList.contains('hidden')) {
+      successOverlay.classList.remove('hidden');
+      stopAllMedia();
+    }
+  }
+  
+  mazeLoopId = requestAnimationFrame(updateLabyrinth);
+}
+
+function drawLabyrinthMinimap() {
+  const canvas = document.getElementById('minimap-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  const cellSize = canvas.width / 8;
+  
+  // Draw grid cells
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (mazeMap[r][c] === 1) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.fillRect(c * cellSize, r * cellSize, cellSize - 1, cellSize - 1);
+      } else {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.fillRect(c * cellSize, r * cellSize, cellSize - 1, cellSize - 1);
+      }
+    }
+  }
+  
+  // Draw exit point (Green glowing dot)
+  ctx.fillStyle = '#10b981';
+  ctx.beginPath();
+  ctx.arc((6 + 0.5) * cellSize, (1 + 0.5) * cellSize, cellSize / 3, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Draw player (Cyan dot with direction needle)
+  const px = mazePlayer.x * cellSize;
+  const py = mazePlayer.y * cellSize;
+  
+  ctx.fillStyle = '#00f2ff';
+  ctx.beginPath();
+  ctx.arc(px, py, cellSize / 4, 0, Math.PI * 2);
+  ctx.fill();
+  
+  ctx.strokeStyle = '#00f2ff';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(px, py);
+  ctx.lineTo(px + Math.sin(mazePlayer.yaw) * (cellSize * 0.8), py - Math.cos(mazePlayer.yaw) * (cellSize * 0.8));
+  ctx.stroke();
 }
 
 // 3. Museo Section (Louvre Museum 3D Square Room version)
@@ -932,12 +1003,6 @@ function updateWallContent(wall, photo, wallIndex) {
     imgWrapper.appendChild(img);
     frame.appendChild(imgWrapper);
 
-    // Crear y añadir el título del recuerdo debajo de la foto dentro del marco
-    const titleEl = document.createElement('div');
-    titleEl.className = 'museum-frame-title-3d';
-    titleEl.textContent = photo.name.length > 25 ? photo.name.slice(0, 22) + '...' : photo.name;
-    frame.appendChild(titleEl);
-
     // Icono de micrófono si cuenta con grabación de voz asociada
     if (photo.associatedAudioId) {
       const audioBadge = document.createElement('div');
@@ -1070,7 +1135,6 @@ async function setupVideoSection() {
   const videoEl = document.getElementById('theater-video-element');
   const billboardOverlay = document.getElementById('cinema-billboard-overlay');
   const btnOpenBillboard = document.getElementById('btn-open-billboard');
-  const btnToggleCinemaZoom = document.getElementById('btn-toggle-cinema-zoom');
 
   if (viewport) {
     viewport.classList.remove('screen-playing', 'viewport-submerged', 'viewport-cinema-fullscreen');
@@ -1085,30 +1149,27 @@ async function setupVideoSection() {
     billboardOverlay.classList.remove('hidden-overlay');
   }
   if (btnOpenBillboard) btnOpenBillboard.classList.add('hidden');
-  if (btnToggleCinemaZoom) {
-    btnToggleCinemaZoom.classList.add('hidden');
-    btnToggleCinemaZoom.innerHTML = '<i class="fas fa-search-plus"></i> Zoom Pantalla';
-  }
-  isZoomedIn = false;
 
   if (videos.length === 0) {
     grid.innerHTML = '<div class="text-center text-gray-500 font-light py-8 col-span-full">No hay películas en cartelera aún. Sube vídeos desde el panel de administración.</div>';
     return;
   }
 
-  videos.forEach((video) => {
+  videos.forEach((video, index) => {
     const card = document.createElement('div');
     card.className = 'movie-poster-item';
+    const url = getMediaUrl(video);
 
     card.innerHTML = `
       <div class="movie-poster-item-thumb">
-        <i class="fas fa-film"></i>
+        <!-- Native video t=1 thumbnail cover -->
+        <video src="${url}#t=1" preload="metadata" muted class="w-full h-full object-cover"></video>
         <div class="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-[10px] text-neon-cyan border border-neon-cyan/30">
           <i class="fas fa-play" style="font-size: 8px; margin-left: 2px; color: var(--color-accent);"></i>
         </div>
       </div>
       <div class="movie-poster-item-info">
-        <div class="movie-poster-item-title">${video.name}</div>
+        <div class="movie-poster-item-title">Película ${index + 1}</div>
         <div class="movie-poster-item-subtitle">Proyectar</div>
       </div>
     `;
@@ -1136,7 +1197,6 @@ function playMovieOnScreen(video) {
   const videoEl = document.getElementById('theater-video-element');
   const billboardOverlay = document.getElementById('cinema-billboard-overlay');
   const btnOpenBillboard = document.getElementById('btn-open-billboard');
-  const btnToggleCinemaZoom = document.getElementById('btn-toggle-cinema-zoom');
 
   if (placeholder) placeholder.classList.add('hidden');
   if (viewport) {
@@ -1144,7 +1204,6 @@ function playMovieOnScreen(video) {
   }
   if (billboardOverlay) billboardOverlay.classList.add('hidden-overlay');
   if (btnOpenBillboard) btnOpenBillboard.classList.remove('hidden');
-  if (btnToggleCinemaZoom) btnToggleCinemaZoom.classList.remove('hidden');
 
   videoEl.src = getMediaUrl(video);
   videoEl.play();
@@ -1198,7 +1257,7 @@ async function triggerRandomMemory() {
           <video class="w-full max-h-[350px] rounded" controls autoplay src="${url}"></video>
         </div>
       `;
-      label = `Vídeo: ${item.name || 'Momento Compartido'}`;
+      label = 'Vídeo de Nuestra Galería';
     }
     
     container.innerHTML = `
@@ -1237,26 +1296,8 @@ async function triggerStarsCollision() {
       document.getElementById('final-stage-collide').classList.add('hidden');
       document.getElementById('final-stage-collide').style.opacity = 1;
 
-      // Check if there is a final video upload in database settings
-      const media = await dbGetAllMedia();
-      const finalVideoItem = media.find(m => m.section === 'video-gallery' && m.type.startsWith('video/'));
-
-      if (finalVideoItem) {
-        // Show stage 2 (Video player)
-        const stageVideo = document.getElementById('final-stage-video');
-        const videoEl = document.getElementById('final-video-element');
-        
-        stageVideo.classList.remove('hidden');
-        videoEl.src = getMediaUrl(finalVideoItem);
-        videoEl.play();
-
-        videoEl.onended = () => {
-          transitionToFinalLetter();
-        };
-      } else {
-        // Skip video, go to letter directly
-        transitionToFinalLetter();
-      }
+      // Skip video, go to letter directly
+      transitionToFinalLetter();
     }
   });
 }
@@ -1264,30 +1305,24 @@ async function triggerStarsCollision() {
 async function transitionToFinalLetter() {
   stopAllMedia();
   
-  gsap.to('#final-stage-video', {
-    opacity: 0,
-    duration: 0.5,
-    onComplete: async () => {
-      document.getElementById('final-stage-video').classList.add('hidden');
-      document.getElementById('final-stage-video').style.opacity = 1;
+  const stageLetter = document.getElementById('final-stage-letter');
+  if (stageLetter) {
+    stageLetter.classList.remove('hidden');
+    gsap.fromTo(stageLetter, { opacity: 0 }, { opacity: 1, duration: 0.8 });
+    
+    const letterText = document.getElementById('final-letter-text');
+    letterText.textContent = '';
 
-      const stageLetter = document.getElementById('final-stage-letter');
-      stageLetter.classList.remove('hidden');
-      
-      const letterText = document.getElementById('final-letter-text');
-      letterText.textContent = '';
+    // Get configuration details
+    const rawDate = await dbGetSetting('anniversary_date', '2026-05-14T00:00');
+    const letterContent = await dbGetSetting('final_letter', 'Mi amor,\n\nDesde el primer día que cruzamos miradas, supe que nuestra historia se escribiría en las estrellas. Cada risa, cada viaje, cada pequeño momento a tu lado ha formado una constelación de recuerdos que atesoraré para siempre. Gracias por ser mi puerto seguro en este inmenso universo.\n\nTe amo hoy, mañana y hasta el fin del tiempo.\n\nManuel');
 
-      // Get configuration details
-      const rawDate = await dbGetSetting('anniversary_date', '2026-05-14T00:00');
-      const letterContent = await dbGetSetting('final_letter', 'Mi amor,\n\nDesde el primer día que cruzamos miradas, supe que nuestra historia se escribiría en las estrellas. Cada risa, cada viaje, cada pequeño momento a tu lado ha formado una constelación de recuerdos que atesoraré para siempre. Gracias por ser mi puerto seguro en este inmenso universo.\n\nTe amo hoy, mañana y hasta el fin del tiempo.\n\nManuel');
+    // Typewriter writing animation
+    typewriterAnimation(letterContent, letterText);
 
-      // Typewriter writing animation
-      typewriterAnimation(letterContent, letterText);
-
-      // Start tick anniversary counter
-      startAnniversaryCounter(rawDate);
-    }
-  });
+    // Start tick anniversary counter
+    startAnniversaryCounter(rawDate);
+  }
 }
 
 function typewriterAnimation(text, element) {
@@ -1819,7 +1854,6 @@ function bindUIEvents() {
   const billboardOverlay = document.getElementById('cinema-billboard-overlay');
   const btnOpenBillboard = document.getElementById('btn-open-billboard');
   const btnCloseBillboard = document.getElementById('btn-close-billboard');
-  const btnToggleCinemaZoom = document.getElementById('btn-toggle-cinema-zoom');
   const povViewport = document.getElementById('pov-viewport');
   const videoEl = document.getElementById('theater-video-element');
 
@@ -1840,18 +1874,24 @@ function bindUIEvents() {
     };
   }
 
-  if (btnToggleCinemaZoom) {
-    btnToggleCinemaZoom.onclick = () => {
-      isZoomedIn = !isZoomedIn;
-      if (isZoomedIn) {
-        povViewport.classList.remove('viewport-submerged');
-        povViewport.classList.add('viewport-cinema-fullscreen');
-        btnToggleCinemaZoom.innerHTML = '<i class="fas fa-search-minus"></i> Modo POV';
+  // Click on the projector screen toggles play/pause natively
+  if (videoEl) {
+    videoEl.onclick = () => {
+      if (videoEl.paused) {
+        videoEl.play();
+        povViewport.classList.add('screen-playing');
       } else {
-        povViewport.classList.remove('viewport-cinema-fullscreen');
-        povViewport.classList.add('viewport-submerged');
-        btnToggleCinemaZoom.innerHTML = '<i class="fas fa-search-plus"></i> Zoom Pantalla';
+        videoEl.pause();
+        povViewport.classList.remove('screen-playing');
       }
+    };
+  }
+
+  // Labyrinth exit continue action
+  const btnLabyrinthContinue = document.getElementById('btn-labyrinth-continue');
+  if (btnLabyrinthContinue) {
+    btnLabyrinthContinue.onclick = () => {
+      navigateTo('museo');
     };
   }
 

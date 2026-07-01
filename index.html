@@ -143,46 +143,46 @@
     </div>
   </section>
 
-  <!-- ================= SECTION 3: CONSTELACIÓN (INTERACTIVE MAP) ================= -->
+  <!-- ================= SECTION 3: CONSTELACIÓN (LABERINTO 3D) ================= -->
   <section id="sec-constelacion" class="page-section">
     <div class="absolute top-24 left-1/2 -translate-x-1/2 z-20 text-center w-full px-6 pointer-events-none">
-      <h2 class="serif-title text-3xl md:text-4xl tracking-widest text-white mb-2">El Comedor de los Recuerdos</h2>
-      <p class="text-xs uppercase tracking-widest text-neon-cyan/70 font-light">Arrastra en cualquier dirección para explorar la sala 3D y haz clic en los cuadros para ver nuestras fotos.</p>
+      <h2 class="serif-title text-3xl md:text-4xl tracking-widest text-white mb-2">Laberinto de los Recuerdos</h2>
+      <p class="text-xs uppercase tracking-widest text-neon-cyan/70 font-light">Explora el laberinto 3D y encuentra la salida. Haz clic en las fotos para verlas.</p>
     </div>
 
-    <!-- 3D Room Viewport -->
-    <div class="scene-3d w-full h-screen flex items-center justify-center overflow-hidden" id="dining-room-viewport">
-      <div class="room-3d" id="dining-room-element">
-        <!-- 3D Room Faces -->
-        <div class="room-face room-back" id="room-wall-back"></div>
-        <div class="room-face room-left" id="room-wall-left"></div>
-        <div class="room-face room-right" id="room-wall-right"></div>
-        <div class="room-face room-floor">
-          <!-- Parquet details or rug -->
-          <div class="rug-3d"></div>
+    <!-- 3D Labyrinth Viewport Container -->
+    <div id="dining-room-viewport" class="scene-3d w-full h-screen flex items-center justify-center overflow-hidden">
+      <!-- 3D Labyrinth Room wrapper -->
+      <div class="labyrinth-container" style="perspective: 600px; width: 100%; height: 100%; position: relative; overflow: hidden;">
+        <!-- The Labyrinth Camera/World -->
+        <div id="labyrinth-world" style="width: 100%; height: 100%; position: absolute; transform-style: preserve-3d; transition: transform 0.1s ease-out;">
+          <!-- Walls will be generated dynamically here -->
         </div>
-        <div class="room-face room-ceiling"></div>
+      </div>
+      
+      <!-- Mini-map in top-right corner to help navigation -->
+      <div id="labyrinth-minimap" class="absolute top-24 right-6 p-3 glass-premium rounded-xl z-20 border border-white/10 w-28 h-28 flex flex-col items-center justify-center">
+        <canvas id="minimap-canvas" width="80" height="80"></canvas>
+        <span class="text-[8px] uppercase tracking-widest text-neon-cyan/70 mt-1">Mapa del Laberinto</span>
+      </div>
 
-        <!-- 3D Dining Table in the Center -->
-        <div class="table-3d">
-          <div class="table-surface table-top" id="dining-table-top"></div>
-          <div class="table-surface table-leg table-leg-1"></div>
-          <div class="table-surface table-leg table-leg-2"></div>
-          <div class="table-surface table-leg table-leg-3"></div>
-          <div class="table-surface table-leg table-leg-4"></div>
-          
-          <!-- Popcorn Bucket placed on the table! -->
-          <div class="popcorn-container-3d">
-            <div class="popcorn-bucket">
-              <div class="stripe stripe-red"></div>
-              <div class="stripe stripe-white"></div>
-              <div class="stripe stripe-red"></div>
-              <div class="stripe stripe-white"></div>
-              <div class="popcorn-pieces"></div>
-            </div>
-            <div class="popcorn-label">POP CORN</div>
-          </div>
+      <!-- Labyrinth Overlay / Success message -->
+      <div id="labyrinth-success-overlay" class="absolute inset-0 bg-space/95 backdrop-blur-md flex flex-col items-center justify-center z-30 hidden">
+        <div class="glass-premium p-8 rounded-2xl max-w-md text-center border border-neon-cyan/30 shadow-2xl">
+          <i class="fas fa-trophy text-5xl text-neon-cyan mb-4 animate-bounce"></i>
+          <h3 class="serif-title text-3xl text-white mb-2">¡Encontraste la Salida!</h3>
+          <p class="text-xs text-gray-400 mb-6">Has recorrido el laberinto de nuestros recuerdos con éxito y has encontrado la salida.</p>
+          <button id="btn-labyrinth-continue" class="px-6 py-3 bg-neon-cyan text-space font-bold uppercase tracking-widest text-xs rounded-lg hover:bg-white transition-all shadow-md">
+            Continuar al Museo
+          </button>
         </div>
+      </div>
+
+      <!-- Keyboard controls instructions (Centered overlay that fades out) -->
+      <div id="labyrinth-instructions" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 glass-premium px-4 py-2 rounded-full z-20 text-[9px] text-gray-300 uppercase tracking-widest flex items-center gap-3">
+        <span>Moverse: <b class="text-neon-cyan">W A S D</b> o <b class="text-neon-cyan">Flechas</b></span>
+        <span class="text-white/20">|</span>
+        <span>Meta: Llegar al punto verde en el mapa</span>
       </div>
     </div>
   </section>
@@ -239,8 +239,8 @@
         <div class="pov-projector-ray"></div>
         
         <!-- The Projection Screen overlay -->
-        <div class="pov-screen shadow-2xl">
-          <video id="theater-video-element" class="w-full h-full object-cover bg-black" controls></video>
+        <div class="pov-screen shadow-2xl cursor-pointer">
+          <video id="theater-video-element" class="w-full h-full object-cover bg-black"></video>
           
           <!-- Cinema Curtains inside the screen -->
           <div class="pov-curtain curtain-left"></div>
@@ -275,14 +275,9 @@
         </div>
       </div>
 
-      <!-- Floating Button to Open Billboard when playing -->
-      <button id="btn-open-billboard" class="absolute top-6 left-6 px-4 py-2 rounded-full glass-premium text-white hover:text-neon-cyan transition-all flex items-center gap-2 z-40 shadow-lg text-xs tracking-wider uppercase font-semibold hidden">
-        <i class="fas fa-film"></i> Cartelera
-      </button>
-
-      <!-- Floating Button to Toggle Zoom POV / Full Screen Video -->
-      <button id="btn-toggle-cinema-zoom" class="absolute top-6 right-6 px-4 py-2 rounded-full glass-premium text-white hover:text-neon-cyan transition-all flex items-center gap-2 z-40 shadow-lg text-xs tracking-wider uppercase font-semibold hidden">
-        <i class="fas fa-search-plus"></i> Zoom Pantalla
+      <!-- Floating Button to Open Billboard when playing (Moved to Bottom Center) -->
+      <button id="btn-open-billboard" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full bg-neon-cyan text-space font-bold uppercase tracking-widest text-xs z-40 shadow-lg hover:bg-white hover:scale-105 transition-all hidden">
+        <i class="fas fa-film mr-2"></i> Cartelera de Cine
       </button>
     </div>
   </section>
@@ -323,13 +318,7 @@
         <p class="text-sm font-light text-gray-300 max-w-xs">Funde todos nuestros recuerdos para revelar el final de la constelación.</p>
       </div>
 
-      <!-- Stage 2: Cinema (Final Video) -->
-      <div id="final-stage-video" class="w-full max-w-3xl aspect-video rounded-xl overflow-hidden bg-black border border-white/10 shadow-2xl relative hidden mb-8">
-        <video id="final-video-element" class="w-full h-full object-cover"></video>
-        <button id="btn-skip-final-video" class="absolute bottom-4 right-4 bg-space/70 border border-white/20 text-xs px-4 py-2 rounded-full uppercase tracking-widest hover:bg-white hover:text-space transition-colors z-20">
-          Saltar Vídeo
-        </button>
-      </div>
+
 
       <!-- Stage 3: The Letter & Counter -->
       <div id="final-stage-letter" class="w-full max-w-2xl p-8 rounded-2xl glass-premium flex flex-col items-center gap-8 text-center hidden">

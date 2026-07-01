@@ -536,14 +536,14 @@ body {
 /* 3D Frame - Gilded Walnut Classical Frame */
 .museum-frame-3d {
   position: relative;
-  width: 25vw;
-  height: 35vw;
-  min-width: 280px;
-  min-height: 380px;
-  max-width: 360px;
-  max-height: 500px;
+  width: 32vw;
+  height: 42vw;
+  min-width: 340px;
+  min-height: 440px;
+  max-width: 460px;
+  max-height: 600px;
   background: #f4f0e6; /* Archival cotton/rag passepartout */
-  padding: 24px 24px 28px 24px; /* Generous margins typical of museum framing */
+  padding: 24px; /* Generous margins typical of museum framing */
   
   /* Physical wood frame border with dark gradient simulating shadows and carvings */
   border: 14px solid #1c140f; 
@@ -589,7 +589,7 @@ body {
 /* 3D Image Wrapper simulating Recessed Canvas */
 .museum-img-wrapper-3d {
   width: 100%;
-  height: calc(100% - 50px); /* Deja espacio abajo para el título */
+  height: 100%; /* Filled completely */
   overflow: hidden;
   position: relative;
   box-shadow: 
@@ -1173,8 +1173,8 @@ body {
 .pov-theater-viewport {
   position: relative;
   width: 100%;
-  aspect-ratio: 1024 / 768;
-  max-width: 133.33vh; /* 100vh * (4/3) */
+  aspect-ratio: 16 / 9;
+  max-width: 177.77vh; /* 100vh * (16/9) */
   height: auto;
   max-height: 100vh;
   background-image: url('cinema_pov.jpg');
@@ -1198,10 +1198,10 @@ body {
 
 .pov-projector-ray {
   position: absolute;
-  top: 8.8%;
-  left: 23.8%;
-  width: 52.4%;
-  height: 38.8%;
+  top: 14.5%;
+  left: 27%;
+  width: 46.5%;
+  height: 28%;
   background: radial-gradient(circle at 50% 0%, rgba(0, 242, 255, 0.08) 0%, transparent 80%);
   mix-blend-mode: screen;
   pointer-events: none;
@@ -1216,10 +1216,10 @@ body {
 
 .pov-screen {
   position: absolute;
-  top: 8.8%;
-  left: 23.8%;
-  width: 52.4%;
-  height: 38.8%;
+  top: 14.5%;
+  left: 27%;
+  width: 46.5%;
+  height: 28%;
   background: black;
   z-index: 10;
   overflow: hidden;
@@ -1366,6 +1366,69 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-top: 2px;
+}
+
+/* 3D Labyrinth CSS Engine */
+.labyrinth-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.maze-wall {
+  position: absolute;
+  width: 400px;
+  height: 300px;
+  top: 50%;
+  left: 50%;
+  margin-top: -150px;
+  margin-left: -200px;
+  background: linear-gradient(135deg, #110e1a 0%, #07050d 100%);
+  border: 2px solid rgba(0, 242, 255, 0.15);
+  box-shadow: 0 0 20px rgba(0, 242, 255, 0.05);
+  backface-visibility: visible;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform-style: preserve-3d;
+}
+
+/* Labyrinth Picture Frame with Cyan Neon Glow */
+.maze-picture-frame {
+  border: 4px solid #00f2ff;
+  box-shadow: 
+    0 0 20px rgba(0, 242, 255, 0.95), 
+    inset 0 0 15px rgba(0, 242, 255, 0.5),
+    0 15px 30px rgba(0, 0, 0, 0.7);
+  background: #0d0b14;
+  padding: 8px;
+  width: 150px;
+  height: 200px;
+  transform: translateZ(5px); /* Offset slightly from wall plane */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.maze-picture-frame:hover {
+  transform: translateZ(15px) scale(1.05);
+  box-shadow: 
+    0 0 30px rgba(0, 242, 255, 1), 
+    inset 0 0 20px rgba(0, 242, 255, 0.6),
+    0 25px 45px rgba(0, 0, 0, 0.8);
+}
+
+.maze-picture-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
 }
 
 
