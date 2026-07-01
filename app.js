@@ -741,18 +741,18 @@ function updateLabyrinth() {
   let dx = 0;
   let dy = 0;
   
-  if (mazeKeys['w'] || mazeKeys['arrowup']) {
+  if (mazeKeys['w']) {
     dx += Math.sin(mazePlayer.yaw) * mazePlayer.speed;
     dy -= Math.cos(mazePlayer.yaw) * mazePlayer.speed;
   }
-  if (mazeKeys['s'] || mazeKeys['arrowdown']) {
+  if (mazeKeys['s']) {
     dx -= Math.sin(mazePlayer.yaw) * mazePlayer.speed;
     dy += Math.cos(mazePlayer.yaw) * mazePlayer.speed;
   }
-  if (mazeKeys['a'] || mazeKeys['arrowleft']) {
+  if (mazeKeys['a']) {
     mazePlayer.yaw -= mazePlayer.rotSpeed;
   }
-  if (mazeKeys['d'] || mazeKeys['arrowright']) {
+  if (mazeKeys['d']) {
     mazePlayer.yaw += mazePlayer.rotSpeed;
   }
   
