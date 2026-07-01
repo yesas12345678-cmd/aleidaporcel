@@ -181,7 +181,7 @@ app.get('/api/media', async (req, res) => {
   }
 });
 
-// Get specific media file binary contents
+// Get specific media file binary contents with Range Requests support
 app.get('/api/media/:id/file', async (req, res) => {
   try {
     const { id } = req.params;
@@ -191,8 +191,34 @@ app.get('/api/media/:id/file', async (req, res) => {
     }
     
     const row = result.rows[0];
+    const dataBuffer = row.data;
+    const totalLength = dataBuffer.length;
+    
+    res.setHeader('Accept-Ranges', 'bytes');
     res.setHeader('Content-Type', row.type);
-    res.send(row.data);
+    
+    const range = req.headers.range;
+    if (range) {
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : totalLength - 1;
+      
+      if (start >= totalLength || end >= totalLength) {
+        res.setHeader('Content-Range', `bytes */${totalLength}`);
+        return res.status(416).send('Requested range not satisfiable');
+      }
+      
+      const chunk = dataBuffer.slice(start, end + 1);
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${totalLength}`,
+        'Content-Length': chunk.length,
+        'Content-Type': row.type
+      });
+      res.end(chunk);
+    } else {
+      res.setHeader('Content-Length', totalLength);
+      res.send(dataBuffer);
+    }
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
@@ -255,7 +281,7 @@ app.get('/api/memories', async (req, res) => {
   }
 });
 
-// Get specific memory media file binary contents
+// Get specific memory media file binary contents with Range Requests support
 app.get('/api/memories/:id/file', async (req, res) => {
   try {
     const { id } = req.params;
@@ -265,13 +291,40 @@ app.get('/api/memories/:id/file', async (req, res) => {
     }
     
     const row = result.rows[0];
+    const dataBuffer = row.media_data;
+    const totalLength = dataBuffer.length;
+    
+    res.setHeader('Accept-Ranges', 'bytes');
     res.setHeader('Content-Type', row.media_type);
-    res.send(row.media_data);
+    
+    const range = req.headers.range;
+    if (range) {
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : totalLength - 1;
+      
+      if (start >= totalLength || end >= totalLength) {
+        res.setHeader('Content-Range', `bytes */${totalLength}`);
+        return res.status(416).send('Requested range not satisfiable');
+      }
+      
+      const chunk = dataBuffer.slice(start, end + 1);
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${totalLength}`,
+        'Content-Length': chunk.length,
+        'Content-Type': row.media_type
+      });
+      res.end(chunk);
+    } else {
+      res.setHeader('Content-Length', totalLength);
+      res.send(dataBuffer);
+    }
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
   }
 });
+
 
 // Save memory metadata and optional binary file via multipart upload
 app.post('/api/memories', upload.single('file'), async (req, res) => {

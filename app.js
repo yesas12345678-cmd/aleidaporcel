@@ -1885,7 +1885,10 @@ function bindUIEvents() {
 
   // Final actions triggers
   document.getElementById('btn-merge-stars').onclick = triggerStarsCollision;
-  document.getElementById('btn-skip-final-video').onclick = transitionToFinalLetter;
+  const btnSkipFinalVideo = document.getElementById('btn-skip-final-video');
+  if (btnSkipFinalVideo) {
+    btnSkipFinalVideo.onclick = transitionToFinalLetter;
+  }
 
   // Admin tabs switching
   document.getElementById('tab-btn-media').onclick = () => switchAdminTab('media');
