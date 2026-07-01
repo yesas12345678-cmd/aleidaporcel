@@ -915,4 +915,492 @@ body {
   }
 }
 
+/* 3D Dining Room Section */
+.scene-3d {
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  background: radial-gradient(circle, rgba(20, 24, 38, 0.8) 0%, rgba(5, 5, 8, 0.98) 100%) !important;
+  z-index: 10;
+}
+
+.room-3d {
+  width: 800px;
+  height: 500px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.1s ease-out;
+  transform: rotateX(-10deg) rotateY(0deg);
+}
+
+.room-face {
+  position: absolute;
+  width: 800px;
+  height: 500px;
+  backface-visibility: visible;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Back Wall */
+.room-back {
+  background: linear-gradient(rgba(10, 15, 30, 0.9), rgba(5, 7, 15, 0.95)), 
+              radial-gradient(circle at 50% 30%, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  transform: translateZ(-400px);
+}
+
+/* Left Wall */
+.room-left {
+  background: linear-gradient(to right, rgba(8, 12, 24, 0.95), rgba(12, 18, 35, 0.9));
+  transform: rotateY(90deg) translateZ(-400px);
+  width: 800px; /* Same depth as width */
+}
+
+/* Right Wall */
+.room-right {
+  background: linear-gradient(to left, rgba(8, 12, 24, 0.95), rgba(12, 18, 35, 0.9));
+  transform: rotateY(-90deg) translateZ(-400px);
+  width: 800px;
+}
+
+/* Floor */
+.room-floor {
+  background: radial-gradient(circle, rgba(30, 20, 15, 0.9) 0%, rgba(15, 10, 8, 0.98) 100%);
+  border-top: 2px solid rgba(255, 255, 255, 0.1);
+  transform: rotateX(90deg) translateZ(-250px);
+  height: 800px; /* Floor depth is 800px */
+}
+
+/* Rug on the floor */
+.rug-3d {
+  width: 400px;
+  height: 300px;
+  background: radial-gradient(ellipse, rgba(139, 92, 246, 0.2) 0%, rgba(0, 242, 255, 0.05) 60%, transparent 100%);
+  border: 1px dashed rgba(0, 242, 255, 0.2);
+  margin: 250px auto;
+  border-radius: 50%;
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.15);
+}
+
+/* Ceiling */
+.room-ceiling {
+  background: rgba(4, 6, 12, 0.98);
+  transform: rotateX(-90deg) translateZ(-250px);
+  height: 800px;
+}
+
+/* 3D Dining Table */
+.table-3d {
+  position: absolute;
+  width: 320px;
+  height: 180px;
+  left: 240px; /* center horizontally in 800px */
+  top: 310px;  /* above the floor */
+  transform-style: preserve-3d;
+  transform: translateZ(-200px); /* place in center of room */
+}
+
+.table-surface {
+  position: absolute;
+  background: #1e1b29;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.table-top {
+  width: 320px;
+  height: 180px;
+  background: linear-gradient(135deg, #181524 0%, #0d0b14 100%);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 242, 255, 0.1);
+  transform: rotateX(90deg) translateZ(0px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.table-leg {
+  width: 12px;
+  height: 120px;
+  background: linear-gradient(to bottom, #110e1a, #05040a);
+}
+
+.table-leg-1 { transform: translate3d(15px, 20px, -60px); }
+.table-leg-2 { transform: translate3d(293px, 20px, -60px); }
+.table-leg-3 { transform: translate3d(15px, 20px, 40px); }
+.table-leg-4 { transform: translate3d(293px, 20px, 40px); }
+
+/* Popcorn Bucket on the Table */
+.popcorn-container-3d {
+  position: absolute;
+  width: 40px;
+  height: 50px;
+  top: 40px;
+  left: 140px;
+  transform-style: preserve-3d;
+  transform: rotateX(-90deg) translateZ(10px) rotateY(15deg);
+}
+
+.popcorn-bucket {
+  width: 30px;
+  height: 40px;
+  background: repeating-linear-gradient(90deg, #ef4444, #ef4444 4px, #ffffff 4px, #ffffff 8px);
+  border-radius: 2px;
+  position: relative;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(0,0,0,0.2);
+}
+
+.popcorn-label {
+  position: absolute;
+  background: #fef08a;
+  color: #1e1b29;
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 6px;
+  padding: 1px 3px;
+  border-radius: 1px;
+  top: 15px;
+  left: 2px;
+  transform: rotate(-5deg);
+  border: 0.5px solid #000;
+}
+
+.popcorn-pieces {
+  position: absolute;
+  top: -6px;
+  left: 2px;
+  width: 26px;
+  height: 8px;
+  background: radial-gradient(circle, #fef08a 2px, #fde047 3px, transparent 4px);
+  background-size: 6px 6px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+}
+
+/* Photo scattered on table top */
+.photo-on-table {
+  width: 80px;
+  height: 60px;
+  background: white;
+  padding: 4px 4px 10px 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  transform: rotate(25deg) translate3d(40px, -20px, 0.5px);
+  cursor: pointer;
+  border-radius: 1px;
+  transition: transform 0.3s;
+}
+
+.photo-on-table:hover {
+  transform: rotate(25deg) translate3d(40px, -20px, 5px) scale(1.1);
+  box-shadow: 0 10px 20px rgba(0, 242, 255, 0.4);
+}
+
+.photo-on-table img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Picture Frames on the walls */
+.picture-frame {
+  position: absolute;
+  background: #111;
+  padding: 8px;
+  border: 4px solid #1e1b29;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 242, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+.picture-frame:hover {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 25px rgba(0, 242, 255, 0.6);
+  transform: translateZ(10px) scale(1.05);
+}
+
+.picture-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.frame-glass {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.frame-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.02);
+  border: 1px dashed rgba(255,255,255,0.1);
+}
+
+/* Layout coordinates for Back wall (800 x 500) */
+.frame-back-1 { width: 140px; height: 180px; left: 100px; top: 120px; }
+.frame-back-2 { width: 200px; height: 140px; left: 280px; top: 100px; }
+.frame-back-3 { width: 160px; height: 160px; left: 520px; top: 130px; }
+.frame-back-4 { width: 120px; height: 160px; left: 340px; top: 270px; }
+
+/* Layout coordinates for Left wall (800 x 500 depth) */
+.frame-left-1 { width: 160px; height: 200px; left: 150px; top: 120px; transform: rotateY(0deg); }
+.frame-left-2 { width: 180px; height: 130px; left: 450px; top: 150px; transform: rotateY(0deg); }
+
+/* Layout coordinates for Right wall (800 x 500 depth) */
+.frame-right-1 { width: 180px; height: 130px; left: 150px; top: 150px; transform: rotateY(0deg); }
+.frame-right-2 { width: 150px; height: 200px; left: 450px; top: 120px; transform: rotateY(0deg); }
+
+/* Movie Theater Styling */
+.theater-room {
+  background: radial-gradient(circle at 50% 20%, rgba(239, 68, 68, 0.08) 0%, rgba(5, 5, 8, 0.95) 80%);
+  padding: 40px 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.9);
+  overflow: hidden;
+}
+
+/* Light beam effect from projector */
+.projector-ray {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 200px solid transparent;
+  border-right: 200px solid transparent;
+  border-bottom: 400px solid rgba(0, 242, 255, 0.02);
+  filter: blur(25px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* The screen container */
+.cinema-screen-container {
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.9), 0 0 40px rgba(0, 242, 255, 0.05);
+  z-index: 2;
+  transition: box-shadow 0.5s ease;
+}
+
+.cinema-screen-container.screen-playing {
+  box-shadow: 0 25px 90px rgba(0, 242, 255, 0.25), 0 0 60px rgba(0, 242, 255, 0.15);
+  animation: screen-flicker 4s infinite alternate;
+}
+
+@keyframes screen-flicker {
+  0%, 100% { box-shadow: 0 25px 90px rgba(0, 242, 255, 0.22), 0 0 50px rgba(0, 242, 255, 0.12); }
+  50% { box-shadow: 0 25px 95px rgba(0, 242, 255, 0.3), 0 0 70px rgba(0, 242, 255, 0.2); }
+}
+
+/* Curtains */
+.cinema-curtain {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 60px;
+  background: repeating-linear-gradient(90deg, #991b1b, #991b1b 10px, #7f1d1d 10px, #7f1d1d 20px);
+  box-shadow: inset -5px 0 15px rgba(0,0,0,0.6), inset 5px 0 15px rgba(0,0,0,0.6);
+  z-index: 3;
+  transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.curtain-left {
+  left: 0;
+  border-right: 2px solid #581c87;
+}
+
+.curtain-right {
+  right: 0;
+  border-left: 2px solid #581c87;
+}
+
+/* Open curtains when playing */
+.cinema-screen-container.screen-playing .curtain-left {
+  transform: translateX(-45px) scaleX(0.7);
+}
+
+.cinema-screen-container.screen-playing .curtain-right {
+  transform: translateX(45px) scaleX(0.7);
+}
+
+/* Screen Glass Reflection overlay */
+.cinema-screen-glass {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* Theater Seats */
+.theater-seats-row {
+  z-index: 3;
+  perspective: 600px;
+}
+
+.theater-seat {
+  width: 70px;
+  height: 80px;
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(10deg);
+}
+
+.seat-back {
+  position: absolute;
+  top: 0;
+  width: 70px;
+  height: 55px;
+  background: linear-gradient(to bottom, #ef4444, #b91c1c);
+  border-radius: 12px 12px 0 0;
+  border: 2px solid #7f1d1d;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6);
+}
+
+.seat-cushion {
+  position: absolute;
+  bottom: 0;
+  width: 70px;
+  height: 35px;
+  background: linear-gradient(to bottom, #dc2626, #991b1b);
+  border-radius: 4px;
+  border: 2px solid #7f1d1d;
+  transform: rotateX(45deg);
+  transform-origin: bottom;
+  box-shadow: 0 8px 12px rgba(0,0,0,0.5);
+}
+
+.seat-armrest {
+  position: absolute;
+  top: 25px;
+  width: 8px;
+  height: 40px;
+  background: linear-gradient(to bottom, #27272a, #09090b);
+  border-radius: 4px;
+  border: 1px solid #18181b;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.6);
+}
+
+.left-arm { left: -6px; }
+.right-arm { right: -6px; }
+
+/* The active seat (scaled up slightly, centered) */
+.active-seat {
+  transform: scale(1.1) rotateX(10deg);
+}
+
+.active-seat .seat-back {
+  background: linear-gradient(to bottom, #ff4d4d, #d32f2f);
+  border-color: #991b1b;
+}
+
+.active-seat .seat-cushion {
+  background: linear-gradient(to bottom, #ff3333, #b31b1b);
+  border-color: #991b1b;
+}
+
+/* Popcorn bucket on active seat armrest */
+.theater-popcorn {
+  position: absolute;
+  top: -16px;
+  right: -8px;
+  width: 18px;
+  height: 22px;
+  background: repeating-linear-gradient(90deg, #ef4444, #ef4444 2.5px, #ffffff 2.5px, #ffffff 5px);
+  border-radius: 1px;
+  border: 0.5px solid rgba(0,0,0,0.3);
+  box-shadow: 0 3px 5px rgba(0,0,0,0.5);
+  transform: rotateZ(5deg);
+}
+
+.popcorn-fluff {
+  position: absolute;
+  top: -4px;
+  left: 1px;
+  width: 16px;
+  height: 5px;
+  background: radial-gradient(circle, #fde047 1.5px, #fef08a 2.5px, transparent 3px);
+  background-size: 4px 4px;
+  filter: drop-shadow(0 0.5px 1px rgba(0,0,0,0.4));
+}
+
+/* Billboard scroll poster */
+.movie-poster-card {
+  flex: 0 0 140px;
+  height: 190px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transform-style: preserve-3d;
+}
+
+.movie-poster-card:hover {
+  transform: translateY(-8px) scale(1.05);
+  border-color: var(--color-accent);
+  box-shadow: 0 10px 20px rgba(0, 242, 255, 0.2);
+}
+
+.movie-poster-card.active-poster {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+  background: rgba(0, 242, 255, 0.05);
+}
+
+.movie-poster-thumb {
+  width: 100%;
+  height: 130px;
+  background: #020205;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  position: relative;
+}
+
+.movie-poster-thumb i {
+  font-size: 24px;
+  color: rgba(255,255,255,0.3);
+  transition: transform 0.3s;
+}
+
+.movie-poster-card:hover .movie-poster-thumb i {
+  color: var(--color-accent);
+  transform: scale(1.2);
+}
+
+.movie-poster-info {
+  padding: 8px;
+}
+
+.movie-poster-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.movie-poster-subtitle {
+  font-size: 8px;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+
 

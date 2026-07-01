@@ -597,285 +597,160 @@ async function setupUniverseSection() {
   }, 10000);
 }
 
-// 2. Constelación Section (Interactive Starfield Map)
-let constellationStars = [];
-let draggingConstellation = false;
-let startDragX = 0, startDragY = 0;
-let dragOffsetX = 0, dragOffsetY = 0;
-let selectedStar = null;
+// 2. Comedor 3D Section (Interactive 3D Room of Memories)
+let isDraggingRoom = false;
+let previousMousePosition = { x: 0, y: 0 };
+let roomRotation = { x: -10, y: 0 }; // starting angles (tilt down slightly)
 
 async function setupConstellationSection() {
-  const canvas = document.getElementById('constellation-canvas');
-  const wrapper = document.getElementById('constellation-wrapper');
-  
-  // Set dimensions based on wrapper size
-  canvas.width = wrapper.clientWidth;
-  canvas.height = wrapper.clientHeight;
+  const viewport = document.getElementById('dining-room-viewport');
+  if (!viewport) return;
 
-  // Center coordinate system initially
-  dragOffsetX = 0;
-  dragOffsetY = 0;
+  // Reset rotation to front view
+  roomRotation = { x: -10, y: 0 };
+  updateRoomTransform();
 
-  // Retrieve constellation memory objects from db
-  const memories = await dbGetAllMemories();
-  
-  // Generate coordinates for stars representing memories
-  constellationStars = memories.map((mem, index) => {
-    // Scatter coordinates in a spiral or orbiting shape around the center
-    const angle = (index / memories.length) * Math.PI * 4 + Math.random() * 0.5;
-    const radius = 100 + index * 60 + Math.random() * 20;
-    return {
-      id: mem.id,
-      title: mem.title,
-      text: mem.text,
-      date: mem.date,
-      mediaBlob: mem.mediaBlob,
-      mediaType: mem.mediaType,
-      mediaName: mem.mediaName,
-      // Target localized coordinates relative to virtual center
-      rx: Math.cos(angle) * radius,
-      ry: Math.sin(angle) * radius,
-      size: Math.random() * 3 + 4,
-      glow: Math.random() * 10 + 5,
-      pulseSpeed: Math.random() * 0.05 + 0.02,
-      pulsePhase: Math.random() * Math.PI
-    };
-  });
+  // Load photos dynamically from database
+  await populateDiningRoomPhotos();
 
-  // Bind mouse dragging events for map exploration
-  wrapper.onmousedown = (e) => {
-    draggingConstellation = true;
-    startDragX = e.clientX - dragOffsetX;
-    startDragY = e.clientY - dragOffsetY;
+  // Mouse Drag to Rotate
+  viewport.onmousedown = (e) => {
+    isDraggingRoom = true;
+    previousMousePosition = { x: e.clientX, y: e.clientY };
   };
 
   window.onmousemove = (e) => {
-    if (!draggingConstellation) return;
-    dragOffsetX = e.clientX - startDragX;
-    dragOffsetY = e.clientY - startDragY;
+    if (!isDraggingRoom) return;
+
+    const deltaMove = {
+      x: e.clientX - previousMousePosition.x,
+      y: e.clientY - previousMousePosition.y
+    };
+
+    // Rotate Y corresponds to horizontal drag (left/right)
+    // Rotate X corresponds to vertical drag (up/down)
+    roomRotation.y += deltaMove.x * 0.4;
+    roomRotation.x = Math.max(-45, Math.min(45, roomRotation.x - deltaMove.y * 0.4)); // bound vertical tilt
+
+    updateRoomTransform();
+
+    previousMousePosition = { x: e.clientX, y: e.clientY };
   };
 
   window.onmouseup = () => {
-    draggingConstellation = false;
+    isDraggingRoom = false;
   };
 
-  // Bind Touch Events for mobile
-  wrapper.ontouchstart = (e) => {
-    draggingConstellation = true;
-    startDragX = e.touches[0].clientX - dragOffsetX;
-    startDragY = e.touches[0].clientY - dragOffsetY;
-  };
-  wrapper.ontouchmove = (e) => {
-    if (!draggingConstellation) return;
-    dragOffsetX = e.touches[0].clientX - startDragX;
-    dragOffsetY = e.touches[0].clientY - startDragY;
-  };
-  wrapper.ontouchend = () => {
-    draggingConstellation = false;
+  // Touch Events for Mobile
+  viewport.ontouchstart = (e) => {
+    isDraggingRoom = true;
+    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
   };
 
-  // Click / select star on mouse click (no dragging)
-  let clickStartX = 0, clickStartY = 0;
-  wrapper.addEventListener('pointerdown', (e) => {
-    clickStartX = e.clientX;
-    clickStartY = e.clientY;
-  });
+  viewport.ontouchmove = (e) => {
+    if (!isDraggingRoom) return;
 
-  wrapper.onclick = (e) => {
-    // Verify if it's a drag or click
-    const dist = Math.hypot(e.clientX - clickStartX, e.clientY - clickStartY);
-    if (dist > 5) return; // Dragged, don't trigger click
+    const deltaMove = {
+      x: e.touches[0].clientX - previousMousePosition.x,
+      y: e.touches[0].clientY - previousMousePosition.y
+    };
 
-    const rect = canvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left - canvas.width / 2 - dragOffsetX;
-    const clickY = e.clientY - rect.top - canvas.height / 2 - dragOffsetY;
+    roomRotation.y += deltaMove.x * 0.4;
+    roomRotation.x = Math.max(-45, Math.min(45, roomRotation.x - deltaMove.y * 0.4));
 
-    // Check hit star
-    let hitStar = null;
-    for (let star of constellationStars) {
-      const starDist = Math.hypot(star.rx - clickX, star.ry - clickY);
-      if (starDist < star.size + 15) { // 15px bounding hitbox padding
-        hitStar = star;
-        break;
-      }
-    }
+    updateRoomTransform();
 
-    if (hitStar) {
-      openMemoryModal(hitStar);
-    }
+    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
   };
 
-  // Start internal drawing loop for Constellation
-  drawConstellationMap();
+  viewport.ontouchend = () => {
+    isDraggingRoom = false;
+  };
 }
 
-function drawConstellationMap() {
-  const canvas = document.getElementById('constellation-canvas');
-  if (!canvas || !document.getElementById('sec-constelacion').classList.contains('active')) return;
-
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  const cx = canvas.width / 2 + dragOffsetX;
-  const cy = canvas.height / 2 + dragOffsetY;
-
-  // 1. Draw dynamic connection constellation lines
-  ctx.strokeStyle = 'rgba(0, 242, 255, 0.08)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  for (let i = 0; i < constellationStars.length; i++) {
-    const starA = constellationStars[i];
-    const ax = starA.rx + cx;
-    const ay = starA.ry + cy;
-
-    // Connect sequentially to draw a visual timeline constelation
-    if (i < constellationStars.length - 1) {
-      const starB = constellationStars[i + 1];
-      ctx.lineTo(starB.rx + cx, starB.ry + cy);
-    } else if (constellationStars.length > 2) {
-      // Close loop or lead to center
-      ctx.lineTo(constellationStars[0].rx + cx, constellationStars[0].ry + cy);
-    }
+function updateRoomTransform() {
+  const room = document.getElementById('dining-room-element');
+  if (room) {
+    room.style.transform = `rotateX(${roomRotation.x}deg) rotateY(${roomRotation.y}deg)`;
   }
-  ctx.stroke();
-
-  // Connect stars with neighbors within close proximity for extra grid feeling
-  ctx.strokeStyle = 'rgba(139, 92, 246, 0.04)';
-  for (let i = 0; i < constellationStars.length; i++) {
-    for (let j = i + 1; j < constellationStars.length; j++) {
-      const starA = constellationStars[i];
-      const starB = constellationStars[j];
-      const dist = Math.hypot(starA.rx - starB.rx, starA.ry - starB.ry);
-      if (dist < 180) {
-        ctx.beginPath();
-        ctx.moveTo(starA.rx + cx, starA.ry + cy);
-        ctx.lineTo(starB.rx + cx, starB.ry + cy);
-        ctx.stroke();
-      }
-    }
-  }
-
-  // 2. Draw stars
-  constellationStars.forEach((star) => {
-    star.pulsePhase += star.pulseSpeed;
-    const pulseScale = 1 + Math.sin(star.pulsePhase) * 0.25;
-
-    const sx = star.rx + cx;
-    const sy = star.ry + cy;
-
-    // Outer glow cian/purple
-    ctx.shadowBlur = star.glow * pulseScale;
-    ctx.shadowColor = star.id === (selectedStar?.id) ? '#ffffff' : '#00f2ff';
-    ctx.fillStyle = star.id === (selectedStar?.id) ? '#ffffff' : 'rgba(0, 242, 255, 0.9)';
-
-    // Pulse size
-    ctx.beginPath();
-    ctx.arc(sx, sy, star.size * pulseScale * 0.8, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Dibujar el título de la estrella en el mapa de forma más clara y visible
-    ctx.shadowBlur = 4;
-    ctx.shadowColor = '#000000';
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-    ctx.font = '500 13px Inter';
-    ctx.textAlign = 'center';
-    ctx.fillText(star.title, sx, sy - star.size - 12);
-    ctx.shadowBlur = 0; // Restaurar shadowBlur
-  });
-
-  requestAnimationFrame(drawConstellationMap);
 }
 
-function openMemoryModal(star) {
-  selectedStar = star;
-  stopAllMedia();
+async function populateDiningRoomPhotos() {
+  const wallBack = document.getElementById('room-wall-back');
+  const wallLeft = document.getElementById('room-wall-left');
+  const wallRight = document.getElementById('room-wall-right');
+  const tableTop = document.getElementById('dining-table-top');
 
-  const modal = document.getElementById('memory-modal');
-  const title = document.getElementById('memory-title');
-  const text = document.getElementById('memory-text');
-  const dateSpan = document.getElementById('memory-category');
-  const mediaContainer = document.getElementById('memory-media-container');
-  const audioPlayer = document.getElementById('memory-audio-player');
-  const videoPlayer = document.getElementById('memory-video-player');
+  if (!wallBack || !wallLeft || !wallRight || !tableTop) return;
 
-  title.textContent = star.title;
-  text.textContent = star.text;
-  
-  // Format Date gracefully
-  const formattedDate = star.date ? new Date(star.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Recuerdo Especial';
-  dateSpan.textContent = `ESTRELLA DEL RECUERDO • ${formattedDate}`;
+  // Clear existing items inside them
+  wallBack.innerHTML = '';
+  wallLeft.innerHTML = '';
+  wallRight.innerHTML = '';
+  tableTop.innerHTML = '';
 
-  // Media attachments check
-  if (star.mediaType || star.mediaBlob) {
-    mediaContainer.classList.remove('hidden');
-    const mediaUrl = getMemoryUrl(star);
+  const media = await dbGetAllMedia();
+  const photos = media.filter(m => m.section === 'museum' && m.type.startsWith('image/'));
 
-    if (star.mediaType.startsWith('video/')) {
-      videoPlayer.classList.remove('hidden');
-      audioPlayer.classList.add('hidden');
-      const videoEl = document.getElementById('memory-video-element');
-      videoEl.src = mediaUrl;
-    } else if (star.mediaType.startsWith('audio/')) {
-      audioPlayer.classList.remove('hidden');
-      videoPlayer.classList.add('hidden');
-      const audioEl = document.getElementById('memory-audio-element');
-      audioEl.src = mediaUrl;
+  // Define frames layout for walls
+  // Wall Back can have 4 frames, Left Wall 2 frames, Right Wall 2 frames
+  const wallsLayout = [
+    { container: wallBack, count: 4, className: 'frame-back' },
+    { container: wallLeft, count: 2, className: 'frame-left' },
+    { container: wallRight, count: 2, className: 'frame-right' }
+  ];
+
+  let photoIndex = 0;
+
+  wallsLayout.forEach(layout => {
+    for (let i = 0; i < layout.count; i++) {
+      const frame = document.createElement('div');
+      frame.className = `picture-frame ${layout.className}-${i + 1}`;
       
-      // Bind audio controls
-      const playBtn = document.getElementById('btn-memory-play');
-      const progressBar = document.getElementById('audio-progress-bar');
-      progressBar.style.width = '0%';
-      playBtn.innerHTML = '<i class="fas fa-play ml-1"></i>';
-
-      playBtn.onclick = () => {
-        if (audioEl.paused) {
-          audioEl.play();
-          playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-          state.activeAudio = audioEl;
-        } else {
-          audioEl.pause();
-          playBtn.innerHTML = '<i class="fas fa-play ml-1"></i>';
-        }
-      };
-
-      audioEl.ontimeupdate = () => {
-        const percent = (audioEl.currentTime / audioEl.duration) * 100;
-        progressBar.style.width = `${percent}%`;
-      };
-
-      audioEl.onended = () => {
-        playBtn.innerHTML = '<i class="fas fa-play ml-1"></i>';
-        progressBar.style.width = '0%';
-      };
-    }
-  } else {
-    mediaContainer.classList.add('hidden');
-    audioPlayer.classList.add('hidden');
-    videoPlayer.classList.add('hidden');
-  }
-
-  // Animate open modal
-  modal.classList.remove('hidden');
-  const innerModal = modal.querySelector('.glass-premium');
-  gsap.fromTo(innerModal, { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(1.2)' });
-}
-
-function closeMemoryModal() {
-  const modal = document.getElementById('memory-modal');
-  const innerModal = modal.querySelector('.glass-premium');
-  
-  stopAllMedia();
-  selectedStar = null;
-
-  gsap.to(innerModal, {
-    scale: 0.9,
-    opacity: 0,
-    duration: 0.3,
-    ease: 'power2.in',
-    onComplete: () => {
-      modal.classList.add('hidden');
+      if (photos.length > 0) {
+        const photo = photos[photoIndex % photos.length];
+        const url = getMediaUrl(photo);
+        frame.innerHTML = `
+          <div class="frame-glass"></div>
+          <img src="${url}" alt="Recuerdo">
+          <div class="frame-border"></div>
+        `;
+        frame.onclick = (e) => {
+          e.stopPropagation(); // don't trigger drag
+          openLightbox(photo);
+        };
+        photoIndex++;
+      } else {
+        // Placeholder frame
+        frame.innerHTML = `
+          <div class="frame-glass"></div>
+          <div class="frame-placeholder">
+            <i class="fas fa-heart text-white/20 text-lg"></i>
+          </div>
+          <div class="frame-border"></div>
+        `;
+      }
+      layout.container.appendChild(frame);
     }
   });
+
+  // Table Top: scattered photos
+  if (photos.length > 0) {
+    const tablePhoto = photos[photoIndex % photos.length];
+    const url = getMediaUrl(tablePhoto);
+    const photoOnTable = document.createElement('div');
+    photoOnTable.className = 'photo-on-table';
+    photoOnTable.innerHTML = `
+      <img src="${url}" alt="Foto en Mesa">
+    `;
+    photoOnTable.onclick = (e) => {
+      e.stopPropagation();
+      openLightbox(tablePhoto);
+    };
+    tableTop.appendChild(photoOnTable);
+  } else {
+    tableTop.innerHTML = '<div class="table-decoration"><i class="fas fa-seedling text-white/30 text-xs"></i></div>';
+  }
 }
 
 // 3. Museo Section (Louvre Museum 3D Square Room version)
@@ -923,7 +798,7 @@ async function setupMuseumSection() {
 
   const media = await dbGetAllMedia();
   // Filter for museum photo assets
-  let museumPhotos = media.filter(m => m.section === 'museum' && m.type.startsWith('image/')).slice(0, 50);
+  let museumPhotos = media.filter(m => m.section === 'museum' && m.type.startsWith('image/')).slice(0, 200);
 
   // Use fallback photos if database is empty
   if (museumPhotos.length === 0) {
@@ -1178,186 +1053,147 @@ function closeLightbox() {
   }
 }
 
-// 4. Galería de Vídeos Section (Netflix Grid)
+// 4. Galería de Vídeos Section (Sala de Cine)
 async function setupVideoSection() {
   const grid = document.getElementById('video-gallery-grid');
+  if (!grid) return;
   grid.innerHTML = '';
 
   const media = await dbGetAllMedia();
-  const videos = media.filter(m => m.section === 'video-gallery' && m.type.startsWith('video/')).slice(0, 24);
+  // Filter for video gallery assets, completely removing the slice limit!
+  const videos = media.filter(m => m.section === 'video-gallery' && m.type.startsWith('video/'));
+
+  // Reset screen
+  const screenContainer = document.querySelector('.cinema-screen-container');
+  const placeholder = document.getElementById('cinema-placeholder');
+  const videoEl = document.getElementById('theater-video-element');
+  
+  if (screenContainer) screenContainer.classList.remove('screen-playing');
+  if (placeholder) placeholder.classList.remove('hidden');
+  if (videoEl) {
+    videoEl.pause();
+    videoEl.src = "";
+    videoEl.load();
+  }
 
   if (videos.length === 0) {
-    grid.innerHTML = '<div class="col-span-full text-center text-gray-500 font-light py-12">No hay vídeos cargados aún. Configúralos en el panel de administración.</div>';
+    grid.innerHTML = '<div class="text-center text-gray-500 font-light py-8 w-full">No hay películas en cartelera aún. Sube vídeos desde el panel de administración.</div>';
     return;
   }
 
   videos.forEach((video) => {
     const card = document.createElement('div');
-    card.className = 'video-card group';
+    card.className = 'movie-poster-card';
 
-    // Generates a mock canvas thumbnail to avoid blank states
-    const thumb = document.createElement('div');
-    thumb.className = 'w-full h-full bg-slate-950 flex flex-col items-center justify-center absolute inset-0';
-    thumb.innerHTML = `
-      <i class="fas fa-play text-4xl text-white/40 group-hover:text-neon-cyan group-hover:scale-110 transition-all duration-300"></i>
-      <span class="text-[9px] uppercase tracking-wider text-gray-600 mt-3">Ver Vídeo</span>
+    card.innerHTML = `
+      <div class="movie-poster-thumb">
+        <i class="fas fa-film"></i>
+        <div class="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-[10px] text-neon-cyan border border-neon-cyan/30">
+          <i class="fas fa-play" style="font-size: 8px; margin-left: 2px; color: var(--color-accent);"></i>
+        </div>
+      </div>
+      <div class="movie-poster-info">
+        <div class="movie-poster-title">${video.name}</div>
+        <div class="movie-poster-subtitle">Proyectar</div>
+      </div>
     `;
-
-    const info = document.createElement('div');
-    info.className = 'video-info';
-    info.innerHTML = `
-      <h4 class="text-sm font-semibold text-white truncate">${video.name}</h4>
-      <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">Capítulo Movimiento</p>
-    `;
-
-    card.appendChild(thumb);
-    card.appendChild(info);
 
     card.onclick = () => {
-      openTheater(video);
+      // Remove active class from all posters
+      document.querySelectorAll('.movie-poster-card').forEach(c => c.classList.remove('active-poster'));
+      card.classList.add('active-poster');
+
+      // Play video on the main screen
+      playMovieOnScreen(video);
     };
 
     grid.appendChild(card);
   });
 
-  // Increíble animación de aparición suave y escalado (pop-in) tipo cartelera de cine
-  gsap.fromTo('.video-card', 
-    { opacity: 0, scale: 0.9, y: 30 }, 
-    { opacity: 1, scale: 1, y: 0, duration: 0.8, stagger: 0.05, ease: 'back.out(1.2)' }
+  // GSAP animation for movie posters pop-in
+  gsap.fromTo('.movie-poster-card', 
+    { opacity: 0, scale: 0.9, y: 20 }, 
+    { opacity: 1, scale: 1, y: 0, duration: 0.6, stagger: 0.05, ease: 'power2.out' }
   );
 }
 
-function openTheater(video) {
+function playMovieOnScreen(video) {
   stopAllMedia();
-  const lightbox = document.getElementById('theater-lightbox');
+  const screenContainer = document.querySelector('.cinema-screen-container');
+  const placeholder = document.getElementById('cinema-placeholder');
   const videoEl = document.getElementById('theater-video-element');
 
+  if (placeholder) placeholder.classList.add('hidden');
+  if (screenContainer) screenContainer.classList.add('screen-playing');
+
   videoEl.src = getMediaUrl(video);
-  lightbox.classList.remove('hidden');
   videoEl.play();
-  
-  const content = lightbox.querySelector('.lightbox-content');
-  gsap.fromTo(content, { scale: 0.95, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: 'power3.out' });
 }
 
-function closeTheater() {
-  const lightbox = document.getElementById('theater-lightbox');
-  const content = lightbox.querySelector('.lightbox-content');
-
-  stopAllMedia();
-
-  gsap.to(content, {
-    scale: 0.95,
-    opacity: 0,
-    duration: 0.3,
-    ease: 'power2.in',
-    onComplete: () => {
-      lightbox.classList.add('hidden');
-    }
-  });
-}
-
-// 5. Archivo Aleatorio (Memory Generator Orb)
+// 5. Generador de Fotos y Vídeos Aleatorios
 async function triggerRandomMemory() {
   const container = document.getElementById('random-memory-container');
   container.classList.remove('hidden');
   container.innerHTML = '<div class="text-neon-cyan animate-spin"><i class="fas fa-atom text-2xl"></i></div>';
 
-  // Gather all items from media and memories
+  // Gather all items from media
   const media = await dbGetAllMedia();
-  const memories = await dbGetAllMemories();
 
-  // Combine eligible items
-  const allPool = [];
+  // Filter images from museum and videos from video-gallery
+  const pool = media.filter(m => 
+    (m.section === 'museum' && m.type.startsWith('image/')) ||
+    (m.section === 'video-gallery' && m.type.startsWith('video/'))
+  );
 
-  // Exclude universe photo, it is only for intro
-  media.forEach(m => {
-    if (m.section !== 'universe') {
-      allPool.push({ type: 'media', item: m });
-    }
-  });
-
-  memories.forEach(m => {
-    allPool.push({ type: 'memory', item: m });
-  });
-
-  if (allPool.length === 0) {
-    container.innerHTML = '<span class="text-gray-500 text-xs font-light">No hay ningún recuerdo almacenado en el sistema todavía.</span>';
+  if (pool.length === 0) {
+    container.innerHTML = '<span class="text-gray-500 text-xs font-light">No hay fotos en el Museo ni vídeos en la Galería todavía. Sube archivos desde el panel de administración.</span>';
     return;
   }
 
-  // Animate Orb explosion
+  // Animate Orb explosion/pulse
   const orb = document.getElementById('btn-generate-random').querySelector('.w-32');
   gsap.fromTo(orb, { scale: 1 }, { scale: 1.15, duration: 0.2, yoyo: true, repeat: 1 });
 
   // Delay for cinematic suspense
   setTimeout(() => {
-    const pick = allPool[Math.floor(Math.random() * allPool.length)];
-    renderRandomPick(pick, container);
+    const item = pool[Math.floor(Math.random() * pool.length)];
+    const url = getMediaUrl(item);
+    
+    stopAllMedia();
+    
+    let elementHTML = '';
+    let label = '';
+    
+    if (item.type.startsWith('image/')) {
+      elementHTML = `
+        <div class="relative rounded-lg overflow-hidden border border-white/10 shadow-2xl shadow-neon-cyan/20 max-w-[400px]">
+          <img class="max-h-[350px] w-full object-contain rounded" src="${url}" alt="Foto aleatoria">
+          <div class="absolute inset-0 bg-gradient-to-t from-space/30 to-transparent pointer-events-none"></div>
+        </div>
+      `;
+      label = 'Imagen de Nuestro Museo';
+    } else if (item.type.startsWith('video/')) {
+      elementHTML = `
+        <div class="relative rounded-lg overflow-hidden border border-white/10 shadow-2xl shadow-neon-purple/20 max-w-[400px]">
+          <video class="w-full max-h-[350px] rounded" controls autoplay src="${url}"></video>
+        </div>
+      `;
+      label = `Vídeo: ${item.name || 'Momento Compartido'}`;
+    }
+    
+    container.innerHTML = `
+      <div class="flex flex-col items-center gap-4 w-full p-2">
+        ${elementHTML}
+        <span class="text-[10px] uppercase tracking-widest text-neon-cyan font-semibold">${label}</span>
+      </div>
+    `;
+    
+    // Fade-in dynamic random layout
+    gsap.fromTo(container, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
   }, 600);
 }
 
-function renderRandomPick(pick, container) {
-  container.innerHTML = '';
-  stopAllMedia();
 
-  if (pick.type === 'media') {
-    const item = pick.item;
-    const url = getMediaUrl(item);
-
-    if (item.type.startsWith('image/')) {
-      // Photo rendering
-      container.innerHTML = `
-        <div class="flex flex-col items-center gap-4 w-full">
-          <img class="max-h-[300px] object-contain rounded border border-white/10" src="${url}">
-          <span class="text-xs uppercase tracking-widest text-gray-400">Una foto del Museo</span>
-        </div>
-      `;
-    } else if (item.type.startsWith('video/')) {
-      // Video rendering
-      container.innerHTML = `
-        <div class="flex flex-col items-center gap-4 w-full">
-          <video class="w-full max-h-[300px] rounded-lg" controls src="${url}"></video>
-          <span class="text-xs uppercase tracking-widest text-gray-400">Vídeo: ${item.name}</span>
-        </div>
-      `;
-    } else if (item.type.startsWith('audio/')) {
-      // Audio rendering
-      container.innerHTML = `
-        <div class="flex flex-col items-center gap-4 w-full p-4">
-          <div class="w-16 h-16 rounded-full bg-neon-purple/20 flex items-center justify-center text-neon-purple text-2xl border border-neon-purple/30">
-            <i class="fas fa-microphone"></i>
-          </div>
-          <audio controls src="${url}"></audio>
-          <span class="text-xs uppercase tracking-widest text-gray-400">Nota de Audio: ${item.name}</span>
-        </div>
-      `;
-    }
-  } else if (pick.type === 'memory') {
-    const item = pick.item;
-    let mediaHTML = '';
-    if (item.mediaType || item.mediaBlob) {
-      const url = getMemoryUrl(item);
-      if (item.mediaType.startsWith('video/')) {
-        mediaHTML = `<video class="w-full max-h-[150px] rounded-lg mt-3" controls src="${url}"></video>`;
-      } else {
-        mediaHTML = `<audio class="mt-3 w-full" controls src="${url}"></audio>`;
-      }
-    }
-
-    container.innerHTML = `
-      <div class="flex flex-col text-center p-4">
-        <span class="text-[10px] uppercase tracking-widest text-neon-cyan">Recuerdo de la Constelación</span>
-        <h4 class="serif-title text-2xl text-white mt-1 mb-2">${item.title}</h4>
-        <p class="text-xs text-gray-300 font-light leading-relaxed max-w-sm mx-auto">${item.text}</p>
-        ${mediaHTML}
-      </div>
-    `;
-  }
-
-  // Fade-in dynamic random layout
-  gsap.fromTo(container, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
-}
 
 // 6. Final Section (Colliding Stars, Letter & Count)
 let relationshipInterval = null;
@@ -1578,21 +1414,7 @@ async function handleMediaUpload(e) {
     }
   }
 
-  if (section === 'museum') {
-    const currentCount = existingMedia.filter(m => m.section === 'museum').length;
-    if (currentCount + files.length > 50) {
-      alert(`Supera el límite de 50 fotos en el Museo. Espacio disponible: ${50 - currentCount}`);
-      return;
-    }
-  }
 
-  if (section === 'video-gallery') {
-    const currentCount = existingMedia.filter(m => m.section === 'video-gallery').length;
-    if (currentCount + files.length > 24) {
-      alert(`Supera el límite de 24 vídeos en la Galería. Espacio disponible: ${24 - currentCount}`);
-      return;
-    }
-  }
 
   // Handle voice message upload for museum photo
   let associatedAudioId = null;
@@ -1968,15 +1790,11 @@ function bindUIEvents() {
     navigateTo('constelacion');
   };
 
-  // Close modals
-  document.getElementById('btn-close-memory').onclick = closeMemoryModal;
-  document.getElementById('memory-modal-bg').onclick = closeMemoryModal;
+
 
   document.getElementById('btn-close-lightbox').onclick = closeLightbox;
   document.getElementById('lightbox-bg').onclick = closeLightbox;
 
-  document.getElementById('btn-close-theater').onclick = closeTheater;
-  document.getElementById('theater-bg').onclick = closeTheater;
 
   // Toggle ambient music loop playback
   document.getElementById('btn-toggle-music').onclick = () => {
@@ -1995,8 +1813,10 @@ function bindUIEvents() {
     }
   };
 
-  // Generate random memories
+  // Generate random photo
   document.getElementById('btn-generate-random').onclick = triggerRandomMemory;
+
+
 
   // Final actions triggers
   document.getElementById('btn-merge-stars').onclick = triggerStarsCollision;

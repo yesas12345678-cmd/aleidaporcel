@@ -64,7 +64,7 @@
     <button data-target="constelacion" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Constelación"></button>
     <button data-target="museo" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Museo"></button>
     <button data-target="videos" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Galería de Vídeos"></button>
-    <button data-target="archivo" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Archivo Aleatorio"></button>
+    <button data-target="archivo" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Instantes al Azar"></button>
     <button data-target="final" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="El Final"></button>
     <button id="tracker-btn-next" class="nav-arrow-btn text-gray-500 hover:text-neon-cyan transition-all duration-300 text-sm hover:scale-110 p-1" title="Siguiente Sección">
       <i class="fas fa-chevron-down"></i>
@@ -146,49 +146,41 @@
   <!-- ================= SECTION 3: CONSTELACIÓN (INTERACTIVE MAP) ================= -->
   <section id="sec-constelacion" class="page-section">
     <div class="absolute top-24 left-1/2 -translate-x-1/2 z-20 text-center w-full px-6 pointer-events-none">
-      <h2 class="serif-title text-3xl md:text-4xl tracking-widest text-white mb-2">El Mapa de Nuestra Vida</h2>
-      <p class="text-xs uppercase tracking-widest text-neon-cyan/70 font-light">Arrastra y haz clic en las estrellas para revivir recuerdos</p>
+      <h2 class="serif-title text-3xl md:text-4xl tracking-widest text-white mb-2">El Comedor de los Recuerdos</h2>
+      <p class="text-xs uppercase tracking-widest text-neon-cyan/70 font-light">Arrastra en cualquier dirección para explorar la sala 3D y haz clic en los cuadros para ver nuestras fotos.</p>
     </div>
 
-    <!-- Constellation Canvas -->
-    <div class="constellation-container w-full h-screen" id="constellation-wrapper">
-      <canvas id="constellation-canvas"></canvas>
-    </div>
-
-    <!-- Memory Details Modal (Rendered on Star Click) -->
-    <div id="memory-modal" class="fixed inset-0 z-50 flex items-center justify-center px-4 hidden">
-      <div class="absolute inset-0 bg-space/85 backdrop-blur-md" id="memory-modal-bg"></div>
-      <div class="w-full max-w-lg p-8 rounded-2xl glass-premium z-10 relative flex flex-col gap-6 transform scale-95 transition-transform duration-300">
-        <button class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white flex items-center justify-center hover:scale-105 transition-all text-xl font-light z-30" id="btn-close-memory" title="Cerrar">
-          &times;
-        </button>
-        
-        <div>
-          <span class="text-xs uppercase tracking-widest text-neon-cyan" id="memory-category">Recuerdo de la Constelación</span>
-          <h3 class="serif-title text-3xl text-white mt-1 mb-3" id="memory-title">Título del Recuerdo</h3>
-          <div class="w-12 h-px bg-neon-cyan/50 mb-4"></div>
-          <p class="text-gray-300 font-light text-sm leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto pr-2" id="memory-text">El texto del recuerdo aparecerá aquí describiendo el momento especial vivido...</p>
+    <!-- 3D Room Viewport -->
+    <div class="scene-3d w-full h-screen flex items-center justify-center overflow-hidden" id="dining-room-viewport">
+      <div class="room-3d" id="dining-room-element">
+        <!-- 3D Room Faces -->
+        <div class="room-face room-back" id="room-wall-back"></div>
+        <div class="room-face room-left" id="room-wall-left"></div>
+        <div class="room-face room-right" id="room-wall-right"></div>
+        <div class="room-face room-floor">
+          <!-- Parquet details or rug -->
+          <div class="rug-3d"></div>
         </div>
+        <div class="room-face room-ceiling"></div>
 
-        <!-- Optional audio / small video player -->
-        <div id="memory-media-container" class="w-full hidden">
-          <!-- Audio Player Template -->
-          <div id="memory-audio-player" class="hidden flex items-center gap-4 bg-white/5 border border-white/10 p-4 rounded-xl">
-            <button id="btn-memory-play" class="w-12 h-12 rounded-full bg-neon-cyan text-space flex items-center justify-center hover:scale-105 transition-all">
-              <i class="fas fa-play ml-1"></i>
-            </button>
-            <div class="flex-1">
-              <div class="text-xs font-semibold text-white">Mensaje de voz / Audio especial</div>
-              <div class="w-full bg-gray-700 h-1.5 rounded-full mt-2 overflow-hidden relative">
-                <div id="audio-progress-bar" class="w-0 bg-neon-cyan h-full rounded-full transition-all duration-100"></div>
-              </div>
+        <!-- 3D Dining Table in the Center -->
+        <div class="table-3d">
+          <div class="table-surface table-top" id="dining-table-top"></div>
+          <div class="table-surface table-leg table-leg-1"></div>
+          <div class="table-surface table-leg table-leg-2"></div>
+          <div class="table-surface table-leg table-leg-3"></div>
+          <div class="table-surface table-leg table-leg-4"></div>
+          
+          <!-- Popcorn Bucket placed on the table! -->
+          <div class="popcorn-container-3d">
+            <div class="popcorn-bucket">
+              <div class="stripe stripe-red"></div>
+              <div class="stripe stripe-white"></div>
+              <div class="stripe stripe-red"></div>
+              <div class="stripe stripe-white"></div>
+              <div class="popcorn-pieces"></div>
             </div>
-            <audio id="memory-audio-element"></audio>
-          </div>
-
-          <!-- Video Player Template -->
-          <div id="memory-video-player" class="hidden w-full aspect-video rounded-xl overflow-hidden bg-black/60 relative">
-            <video id="memory-video-element" class="w-full h-full object-cover" controls></video>
+            <div class="popcorn-label">POP CORN</div>
           </div>
         </div>
       </div>
@@ -237,27 +229,74 @@
     </div>
   </section>
 
-  <!-- ================= SECTION 5: GALERÍA DE VÍDEOS (NETFLIX GRID) ================= -->
-  <section id="sec-videos" class="page-section py-28 px-4 flex flex-col justify-start">
-    <div class="text-center mb-16 max-w-xl mx-auto">
-      <h2 class="serif-title text-4xl tracking-widest text-white mb-3">Galería Cinematográfica</h2>
-      <p class="text-xs uppercase tracking-widest text-neon-cyan/70 font-light">Nuestra historia narrada en movimiento.</p>
+  <!-- ================= SECTION 5: GALERÍA DE VÍDEOS (SALA DE CINE) ================= -->
+  <section id="sec-videos" class="page-section py-20 px-4 flex flex-col justify-start">
+    <div class="text-center mb-6 max-w-xl mx-auto z-20">
+      <h2 class="serif-title text-4xl tracking-widest text-white mb-2">Sala de Cine</h2>
+      <p class="text-xs uppercase tracking-widest text-neon-cyan/70 font-light">Nuestra historia proyectada en la gran pantalla.</p>
     </div>
 
-    <!-- Videos Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full max-w-6xl mx-auto px-6" id="video-gallery-grid">
-      <!-- Generated via JS -->
+    <!-- The Theater Room Container -->
+    <div class="theater-room w-full max-w-5xl mx-auto relative flex flex-col items-center z-10" style="margin-bottom: 2rem;">
+      <!-- Projector Ray Effect (glowing light coming down) -->
+      <div class="projector-ray"></div>
+
+      <!-- The Screen Frame (with curtains) -->
+      <div class="cinema-screen-container relative w-full aspect-video max-w-3xl rounded-lg overflow-hidden border-4 border-zinc-800 shadow-2xl">
+        <!-- Curtains on Left & Right -->
+        <div class="cinema-curtain curtain-left"></div>
+        <div class="cinema-curtain curtain-right"></div>
+        
+        <!-- Video Player Element (The Screen itself) -->
+        <div class="cinema-screen-glass"></div>
+        <video id="theater-video-element" class="w-full h-full object-cover bg-black" controls></video>
+        
+        <!-- Screen Placeholder (if no video selected/loaded) -->
+        <div id="cinema-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-black/90 text-center p-6 transition-opacity duration-500 z-10">
+          <i class="fas fa-ticket-alt text-4xl text-neon-cyan/60 mb-3 animate-pulse"></i>
+          <h4 class="text-lg text-white font-semibold">Pantalla Lista</h4>
+          <p class="text-xs text-gray-500 max-w-xs mt-1">Selecciona una película de la cartelera inferior para comenzar la proyección.</p>
+        </div>
+      </div>
+
+      <!-- The Seats Row (Foreground) -->
+      <div class="theater-seats-row flex justify-center gap-6 w-full max-w-2xl mt-8 relative">
+        <!-- Seat Left -->
+        <div class="theater-seat">
+          <div class="seat-back"></div>
+          <div class="seat-cushion"></div>
+          <div class="seat-armrest left-arm"></div>
+          <div class="seat-armrest right-arm"></div>
+        </div>
+
+        <!-- Seat Center (Active Seat) -->
+        <div class="theater-seat active-seat">
+          <div class="seat-back"></div>
+          <div class="seat-cushion"></div>
+          <div class="seat-armrest left-arm"></div>
+          <div class="seat-armrest right-arm">
+            <!-- Popcorn Bucket placed on the armrest! -->
+            <div class="theater-popcorn">
+              <div class="popcorn-fluff"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seat Right -->
+        <div class="theater-seat">
+          <div class="seat-back"></div>
+          <div class="seat-cushion"></div>
+          <div class="seat-armrest left-arm"></div>
+          <div class="seat-armrest right-arm"></div>
+        </div>
+      </div>
     </div>
 
-    <!-- Video Theater Lightbox -->
-    <div id="theater-lightbox" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
-      <div class="absolute inset-0 bg-space/95 backdrop-blur-xl z-10 cursor-pointer" id="theater-bg" onclick="closeTheater()"></div>
-      <button class="absolute top-6 right-6 w-12 h-12 rounded-full bg-space-light/80 border border-white/10 text-white hover:text-neon-cyan flex items-center justify-center hover:scale-105 transition-all text-3xl font-light z-30 shadow-lg cursor-pointer" id="btn-close-theater" title="Cerrar" onclick="closeTheater()">
-        &times;
-      </button>
-      
-      <div class="lightbox-content z-20 w-full max-w-4xl aspect-video rounded-xl overflow-hidden bg-black shadow-2xl border border-white/10 relative">
-        <video id="theater-video-element" class="w-full h-full object-contain" controls autoplay></video>
+    <!-- Movie Billboard / Selection Grid (Bottom) -->
+    <div class="w-full max-w-5xl mx-auto px-6 z-20">
+      <h3 class="text-xs uppercase tracking-widest text-gray-400 font-bold mb-4 font-sans">Cartelera de Películas</h3>
+      <div class="flex gap-4 overflow-x-auto pb-4 scroll-smooth" id="video-gallery-grid">
+        <!-- Movies generated via JS -->
       </div>
     </div>
   </section>
@@ -278,7 +317,7 @@
       
       <span class="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-6">Generador de Recuerdos</span>
 
-      <!-- Container where random item will be rendered -->
+      <!-- Container where random photo/video will be rendered -->
       <div id="random-memory-container" class="w-full min-h-[250px] p-6 rounded-xl glass-premium border border-white/5 flex items-center justify-center text-center transition-all duration-500 hidden">
         <!-- Rendered via JS -->
       </div>
@@ -290,12 +329,12 @@
     <div class="container max-w-4xl px-6 flex flex-col items-center justify-center text-center">
       
       <!-- Stage 1: Collide Trigger -->
-      <div id="final-stage-collide" class="flex flex-col items-center gap-6">
+      <div id="final-stage-collide" class="flex flex-col items-center gap-6 glass-premium p-8 rounded-2xl max-w-md w-full mx-auto border border-white/10 shadow-2xl backdrop-blur-md">
         <div class="w-20 h-20 rounded-full bg-neon-cyan/10 flex items-center justify-center border border-neon-cyan/30 animate-bounce cursor-pointer hover:bg-neon-cyan/20 transition-all duration-300" id="btn-merge-stars">
           <i class="fas fa-compress-arrows-alt text-2xl text-neon-cyan neon-star-glow"></i>
         </div>
-        <h3 class="serif-title text-3xl text-gray-200 tracking-wider">Unir las Estrellas</h3>
-        <p class="text-sm font-light text-gray-400 max-w-xs">Funde todos nuestros recuerdos para revelar el final de la constelación.</p>
+        <h3 class="serif-title text-3xl text-white tracking-wider" style="text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);">Unir las Estrellas</h3>
+        <p class="text-sm font-light text-gray-300 max-w-xs">Funde todos nuestros recuerdos para revelar el final de la constelación.</p>
       </div>
 
       <!-- Stage 2: Cinema (Final Video) -->
@@ -423,8 +462,8 @@
                 <label class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-2">Asignar a Sección</label>
                 <select id="media-section" class="w-full px-4 py-3 rounded-lg glass-input text-xs cursor-pointer">
                   <option value="universe">Universo (Máx 1 Foto)</option>
-                  <option value="museum" selected>Museo (Fotos, Máx 50)</option>
-                  <option value="video-gallery">Galería de Vídeos (Vídeos, Máx 24)</option>
+                  <option value="museum" selected>Museo (Fotos ilimitadas)</option>
+                  <option value="video-gallery">Galería de Vídeos (Vídeos ilimitados)</option>
                 </select>
               </div>
 
@@ -516,11 +555,11 @@
               </li>
               <li class="flex justify-between border-b border-white/5 pb-2">
                 <span>Fotos en Museo:</span>
-                <span class="font-semibold text-white"><span id="stat-museum-count">0</span> / 50</span>
+                <span class="font-semibold text-white" id="stat-museum-count">0</span>
               </li>
               <li class="flex justify-between border-b border-white/5 pb-2">
                 <span>Vídeos en Galería:</span>
-                <span class="font-semibold text-white"><span id="stat-video-count">0</span> / 24</span>
+                <span class="font-semibold text-white" id="stat-video-count">0</span>
               </li>
               <li class="flex justify-between pb-1">
                 <span>Estrellas / Recuerdos:</span>
