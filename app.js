@@ -599,18 +599,14 @@ async function setupUniverseSection() {
 
 // 2. Labyrinth 3D Section (Interactive 3D Memories Maze)
 const mazeMap = [
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
-  [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-  [1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
-  [1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1],
-  [1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1],
-  [1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1],
-  [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+  [1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 0, 0, 0, 1, 0, 0, 1],
+  [1, 0, 1, 0, 1, 0, 1, 1],
+  [1, 0, 1, 0, 0, 0, 0, 1],
+  [1, 0, 1, 1, 1, 1, 0, 1],
+  [1, 0, 0, 0, 0, 1, 0, 1],
+  [1, 1, 1, 0, 0, 0, 0, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1]
 ];
 
 const mazePlayer = {
@@ -647,23 +643,23 @@ async function setupConstellationSection() {
   
   const CELL_SIZE = 400;
   
-  // Render Floor Plane
+  // Render Floor Plane (Centered at grid middle 4x4)
   const floor = document.createElement('div');
   floor.className = 'maze-floor-plane';
-  floor.style.transform = `translate3d(${6 * CELL_SIZE}px, 300px, ${-6 * CELL_SIZE}px) rotateX(90deg)`;
+  floor.style.transform = `translate3d(${4 * CELL_SIZE}px, 300px, ${-4 * CELL_SIZE}px) rotateX(90deg)`;
   world.appendChild(floor);
 
-  // Render Ceiling Plane
+  // Render Ceiling Plane (Centered at grid middle 4x4)
   const ceiling = document.createElement('div');
   ceiling.className = 'maze-ceiling-plane';
-  ceiling.style.transform = `translate3d(${6 * CELL_SIZE}px, -300px, ${-6 * CELL_SIZE}px) rotateX(90deg)`;
+  ceiling.style.transform = `translate3d(${4 * CELL_SIZE}px, -300px, ${-4 * CELL_SIZE}px) rotateX(90deg)`;
   world.appendChild(ceiling);
   
-  // Render Maze Walls in 3D (12x12 grid)
+  // Render Maze Walls in 3D (8x8 grid)
   let photoIndex = 0;
   
-  for (let r = 0; r < 12; r++) {
-    for (let c = 0; c < 12; c++) {
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
       // Horizontal wall: top boundary of cell
       if (r > 0 && ((mazeMap[r][c] === 1) !== (mazeMap[r-1][c] === 1))) {
         createMazeWall(c * CELL_SIZE + CELL_SIZE / 2, -r * CELL_SIZE, 0, photos, photoIndex++);
@@ -675,14 +671,14 @@ async function setupConstellationSection() {
     }
   }
   
-  // Render outer boundary walls (row 0, row 12, col 0, col 12)
-  for (let c = 0; c < 12; c++) {
+  // Render outer boundary walls (row 0, row 8, col 0, col 8)
+  for (let c = 0; c < 8; c++) {
     createMazeWall(c * CELL_SIZE + CELL_SIZE / 2, 0, 0, photos, photoIndex++);
-    createMazeWall(c * CELL_SIZE + CELL_SIZE / 2, -12 * CELL_SIZE, 0, photos, photoIndex++);
+    createMazeWall(c * CELL_SIZE + CELL_SIZE / 2, -8 * CELL_SIZE, 0, photos, photoIndex++);
   }
-  for (let r = 0; r < 12; r++) {
+  for (let r = 0; r < 8; r++) {
     createMazeWall(0, -r * CELL_SIZE - CELL_SIZE / 2, 90, photos, photoIndex++);
-    createMazeWall(12 * CELL_SIZE, -r * CELL_SIZE - CELL_SIZE / 2, 90, photos, photoIndex++);
+    createMazeWall(8 * CELL_SIZE, -r * CELL_SIZE - CELL_SIZE / 2, 90, photos, photoIndex++);
   }
   
   // Keyboard Listeners
@@ -760,16 +756,16 @@ function updateLabyrinth() {
   const nx = mazePlayer.x + dx;
   const ny = mazePlayer.y + dy;
   
-  // Check collision along X axis (boundary: 12 cells)
-  if (nx > 0 && nx < 12 && mazeMap[Math.floor(mazePlayer.y)][Math.floor(nx + Math.sign(dx) * mazePlayer.radius)] !== 1) {
+  // Check collision along X axis (boundary: 8 cells)
+  if (nx > 0 && nx < 8 && mazeMap[Math.floor(mazePlayer.y)][Math.floor(nx + Math.sign(dx) * mazePlayer.radius)] !== 1) {
     mazePlayer.x = nx;
   }
-  // Check collision along Y axis (boundary: 12 cells)
-  if (ny > 0 && ny < 12 && mazeMap[Math.floor(ny + Math.sign(dy) * mazePlayer.radius)][Math.floor(mazePlayer.x)] !== 1) {
+  // Check collision along Y axis (boundary: 8 cells)
+  if (ny > 0 && ny < 8 && mazeMap[Math.floor(ny + Math.sign(dy) * mazePlayer.radius)][Math.floor(mazePlayer.x)] !== 1) {
     mazePlayer.y = ny;
   }
   
-  // 2. Center Camera in 3D
+  // 2. Center Camera in 3D (No double-centering 50vw/50vh offset)
   const world = document.getElementById('labyrinth-world');
   if (world) {
     const CELL_SIZE = 400;
@@ -777,12 +773,12 @@ function updateLabyrinth() {
     const tz = -mazePlayer.y * CELL_SIZE;
     const angleDeg = -mazePlayer.yaw * (180 / Math.PI);
     
-    // Position world: center screen (50% 50%) and translate camera opposite to player
-    world.style.transform = `translate3d(50vw, 50vh, 300px) rotateX(0deg) rotateY(${angleDeg}deg) translate3d(${-tx}px, 0px, ${-tz}px)`;
+    // Centered at screen center, Z pushed by 300px
+    world.style.transform = `translate3d(0px, 0px, 300px) rotateY(${angleDeg}deg) translate3d(${-tx}px, 0px, ${-tz}px)`;
   }
   
-  // 3. Check Exit (Target cell: column 10, row 10)
-  const distToExit = Math.hypot(mazePlayer.x - 10.5, mazePlayer.y - 10.5);
+  // 3. Check Exit (Target cell: column 6, row 1)
+  const distToExit = Math.hypot(mazePlayer.x - 6.5, mazePlayer.y - 1.5);
   if (distToExit < 0.4) {
     const successOverlay = document.getElementById('labyrinth-success-overlay');
     if (successOverlay && successOverlay.classList.contains('hidden')) {
