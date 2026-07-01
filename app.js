@@ -212,15 +212,24 @@ class Starfield {
   triggerZoom() {
     this.zoomMode = true;
     this.zoomProgress = 0;
-    gsap.to(this, {
+    
+    const animObj = { speedFactor: this.speedFactor };
+    
+    gsap.to(animObj, {
       speedFactor: 25,
       duration: 1.5,
       ease: 'power2.in',
+      onUpdate: () => {
+        this.speedFactor = animObj.speedFactor;
+      },
       onComplete: () => {
-        gsap.to(this, {
+        gsap.to(animObj, {
           speedFactor: 0.3,
           duration: 1.5,
           ease: 'power2.out',
+          onUpdate: () => {
+            this.speedFactor = animObj.speedFactor;
+          },
           onComplete: () => {
             this.zoomMode = false;
           }
