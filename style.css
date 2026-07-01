@@ -1580,11 +1580,6 @@ body {
   margin-left: -8px;
 }
 
-@keyframes radar-lock-spin {
-  from { transform: rotate(0deg) scale(1.4); }
-  to { transform: rotate(360deg) scale(0.9); }
-}
-
 /* Radar Scan particle splash */
 .radar-particle {
   position: absolute;
@@ -1594,4 +1589,26 @@ body {
   background: #ff007f;
   pointer-events: none;
   z-index: 6;
+}
+
+/* Spaceship Cockpit View Background for Archivo Section */
+#sec-archivo {
+  background-image: url('spaceship_cockpit.jpg') !important;
+  background-size: cover !important;
+  background-position: center !important;
+  position: relative;
+}
+
+#sec-archivo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 5, 8, 0.45); /* Dark film overlay to keep radar legible */
+  z-index: 1;
+  pointer-events: none;
+}
+
+#sec-archivo > * {
+  position: relative;
+  z-index: 2;
 }
