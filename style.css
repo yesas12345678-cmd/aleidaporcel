@@ -135,7 +135,7 @@ body {
 .page-section.active {
   opacity: 1;
   pointer-events: all;
-  position: relative;
+  position: absolute;
 }
 
 /* Polaroid museum style */
