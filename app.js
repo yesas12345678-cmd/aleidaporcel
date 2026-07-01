@@ -332,7 +332,9 @@ function handleNavigation() {
   // Experience routing
   if (!state.isAuthenticated) {
     showSection('login');
-    navigateTo('');
+    if (getPath() !== '') {
+      history.replaceState(null, '', '/');
+    }
     return;
   }
 
