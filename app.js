@@ -1133,8 +1133,8 @@ async function setupVideoSection() {
 
     card.innerHTML = `
       <div class="movie-poster-item-thumb">
-        <!-- Living cinemagraph autoplay preview with object-contain to avoid crops -->
-        <video src="${url}" preload="auto" autoplay loop muted playsinline class="w-full h-full object-contain"></video>
+        <!-- Static video thumbnail preview showing first frame with object-contain to avoid crops -->
+        <video src="${url}" preload="metadata" class="w-full h-full object-contain"></video>
         <div class="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-[10px] text-neon-cyan border border-neon-cyan/30">
           <i class="fas fa-play" style="font-size: 8px; margin-left: 2px; color: var(--color-accent);"></i>
         </div>
