@@ -289,8 +289,14 @@ let globalStarfield;
 // ----------------------------------------------------
 // Routing & Authentication
 // ----------------------------------------------------
-function getHash() {
-  return window.location.hash.replace(/^#\/?/, '') || '';
+function getPath() {
+  return window.location.pathname.replace(/^\/+|\/+$/g, '') || '';
+}
+
+function navigateTo(route) {
+  const cleanRoute = route.replace(/^\/+/, '');
+  history.pushState(null, '', `/${cleanRoute}`);
+  handleNavigation();
 }
 
 function checkSession() {
@@ -300,7 +306,7 @@ function checkSession() {
 
 function handleNavigation() {
   checkSession();
-  const route = getHash();
+  const route = getPath();
 
   // Route protection
   if (route.startsWith('admin')) {
@@ -308,11 +314,11 @@ function handleNavigation() {
       if (state.isAdmin) {
         showSection('admin');
       } else {
-        window.location.hash = '#/admin-login';
+        navigateTo('admin-login');
       }
     } else if (route === 'admin-login') {
       if (state.isAdmin) {
-        window.location.hash = '#/admin';
+        navigateTo('admin');
       } else {
         showSection('admin-login');
       }
@@ -323,7 +329,7 @@ function handleNavigation() {
   // Experience routing
   if (!state.isAuthenticated) {
     showSection('login');
-    window.location.hash = '#/';
+    navigateTo('');
     return;
   }
 
@@ -332,7 +338,7 @@ function handleNavigation() {
     showSection(route);
   } else {
     // Default to universo
-    window.location.hash = '#/universo';
+    navigateTo('universo');
   }
 }
 
@@ -587,7 +593,7 @@ async function setupUniverseSection() {
   // Transición automática al siguiente capítulo (Constelación) a los 10 segundos
   state.universeTimeout = setTimeout(() => {
     state.universeTimeout = null;
-    window.location.hash = '#/constelacion';
+    navigateTo('constelacion');
   }, 10000);
 }
 
@@ -959,7 +965,7 @@ async function setupMuseumSection() {
       const totalPhotos = state.museumPhotos.length;
       const activePhotoIndex = (state.currentMuseumIndex % totalPhotos + totalPhotos) % totalPhotos;
       if (activePhotoIndex === 0) {
-        window.location.hash = '#/constelacion';
+        navigateTo('constelacion');
       } else {
         state.currentMuseumIndex--;
         updateSquareRoom3D();
@@ -972,7 +978,7 @@ async function setupMuseumSection() {
       const totalPhotos = state.museumPhotos.length;
       const activePhotoIndex = (state.currentMuseumIndex % totalPhotos + totalPhotos) % totalPhotos;
       if (activePhotoIndex === totalPhotos - 1) {
-        window.location.hash = '#/videos';
+        navigateTo('videos');
       } else {
         state.currentMuseumIndex++;
         updateSquareRoom3D();
@@ -1888,7 +1894,7 @@ function bindUIEvents() {
           duration: 0.5,
           onComplete: () => {
             document.getElementById('sec-login').classList.remove('active');
-            window.location.hash = '#/universo';
+            navigateTo('universo');
           }
         });
       } else {
@@ -1910,7 +1916,7 @@ function bindUIEvents() {
         document.getElementById('admin-login-error').classList.add('hidden');
         
         // Redirect to panel dashboard
-        window.location.hash = '#/admin';
+        navigateTo('admin');
       } else {
         document.getElementById('admin-login-error').classList.remove('hidden');
       }
@@ -1924,28 +1930,28 @@ function bindUIEvents() {
       sessionStorage.removeItem('couple_auth');
       state.isAuthenticated = false;
       stopAllMedia();
-      window.location.hash = '#/';
+      navigateTo('');
     };
   }
 
   document.getElementById('btn-admin-logout').onclick = () => {
     sessionStorage.removeItem('admin_auth');
     state.isAdmin = false;
-    window.location.hash = '#/';
+    navigateTo('');
   };
 
   // Navigation arrows next/prev chapter clicks
   document.getElementById('btn-prev-chapter').onclick = () => {
     const currentIndex = state.chapters.indexOf(state.currentChapter);
     if (currentIndex > 0) {
-      window.location.hash = `#/${state.chapters[currentIndex - 1]}`;
+      navigateTo(state.chapters[currentIndex - 1]);
     }
   };
 
   document.getElementById('btn-next-chapter').onclick = () => {
     const currentIndex = state.chapters.indexOf(state.currentChapter);
     if (currentIndex < state.chapters.length - 1) {
-      window.location.hash = `#/${state.chapters[currentIndex + 1]}`;
+      navigateTo(state.chapters[currentIndex + 1]);
     }
   };
 
@@ -1953,13 +1959,13 @@ function bindUIEvents() {
   document.querySelectorAll('.nav-dot').forEach((dot) => {
     dot.onclick = () => {
       const target = dot.getAttribute('data-target');
-      window.location.hash = `#/${target}`;
+      navigateTo(target);
     };
   });
 
   // Enter experience button from Universo Intro
   document.getElementById('btn-enter-constellation').onclick = () => {
-    window.location.hash = '#/constelacion';
+    navigateTo('constelacion');
   };
 
   // Close modals
@@ -2035,7 +2041,7 @@ function bindUIEvents() {
     trackerPrev.onclick = () => {
       const currentIndex = state.chapters.indexOf(state.currentChapter);
       if (currentIndex > 0) {
-        window.location.hash = `#/${state.chapters[currentIndex - 1]}`;
+        navigateTo(state.chapters[currentIndex - 1]);
       }
     };
   }
@@ -2044,7 +2050,7 @@ function bindUIEvents() {
     trackerNext.onclick = () => {
       const currentIndex = state.chapters.indexOf(state.currentChapter);
       if (currentIndex < state.chapters.length - 1) {
-        window.location.hash = `#/${state.chapters[currentIndex + 1]}`;
+        navigateTo(state.chapters[currentIndex + 1]);
       }
     };
   }
@@ -2071,13 +2077,13 @@ function bindUIEvents() {
       // Siguiente sección
       const currentIndex = state.chapters.indexOf(state.currentChapter);
       if (currentIndex < state.chapters.length - 1) {
-        window.location.hash = `#/${state.chapters[currentIndex + 1]}`;
+        navigateTo(state.chapters[currentIndex + 1]);
       }
     } else if (e.key === 'ArrowUp') {
       // Sección anterior
       const currentIndex = state.chapters.indexOf(state.currentChapter);
       if (currentIndex > 0) {
-        window.location.hash = `#/${state.chapters[currentIndex - 1]}`;
+        navigateTo(state.chapters[currentIndex - 1]);
       }
     }
   });
@@ -2137,7 +2143,7 @@ window.onload = async () => {
   // Bind forms & clicks
   bindUIEvents();
 
-  // Hook Hash Routing
-  window.addEventListener('hashchange', handleNavigation);
+  // Hook History API Routing
+  window.addEventListener('popstate', handleNavigation);
   handleNavigation(); // Trigger router on launch
 };
