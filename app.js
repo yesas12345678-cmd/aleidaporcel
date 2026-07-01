@@ -21,6 +21,9 @@ const state = {
   typewriterInterval: null, // Track typewriter interval to prevent text accumulation
   universeTimeout: null, // Timer for the 10-second transition in Universo intro
   currentMuseumIndex: 0, // Índice de la foto activa en la galería 3D del Louvre
+  playlistMode: false, // Tracks sequential video playlist mode
+  playlistVideos: [], // Array of videos in playlist
+  currentPlaylistIndex: 0 // Index of active video in playlist
 };
 
 // Database Helpers (PostgreSQL API Client)
@@ -1093,6 +1096,9 @@ async function setupVideoSection() {
   const media = await dbGetAllMedia();
   // Filter for video gallery assets, completely removing the slice limit!
   const videos = media.filter(m => m.section === 'video-gallery' && m.type.startsWith('video/'));
+  
+  state.playlistVideos = videos;
+  state.playlistMode = false;
 
   // Reset screen and viewport
   const viewport = document.getElementById('pov-viewport');
@@ -1142,6 +1148,7 @@ async function setupVideoSection() {
     card.onclick = () => {
       document.querySelectorAll('.movie-poster-item').forEach(c => c.classList.remove('active-item'));
       card.classList.add('active-item');
+      state.playlistMode = false; // Disable sequential playlist mode on manual video select
       playMovieOnScreen(video);
     };
 
@@ -1854,6 +1861,36 @@ function bindUIEvents() {
       } else {
         videoEl.pause();
         povViewport.classList.remove('screen-playing');
+      }
+    };
+
+    // Autoplay sequential playlist feature
+    videoEl.onended = () => {
+      if (state.playlistMode) {
+        state.currentPlaylistIndex++;
+        if (state.playlistVideos && state.currentPlaylistIndex < state.playlistVideos.length) {
+          playMovieOnScreen(state.playlistVideos[state.currentPlaylistIndex]);
+        } else {
+          // Playlist finished
+          state.playlistMode = false;
+          // Open billboard again to let user select another movie
+          const billboard = document.getElementById('cinema-billboard-overlay');
+          if (billboard) billboard.classList.remove('hidden-overlay');
+        }
+      }
+    };
+  }
+
+  // Play All Playlist button inside Billboard
+  const btnPlayPlaylist = document.getElementById('btn-play-playlist');
+  if (btnPlayPlaylist) {
+    btnPlayPlaylist.onclick = () => {
+      if (state.playlistVideos && state.playlistVideos.length > 0) {
+        state.playlistMode = true;
+        state.currentPlaylistIndex = 0;
+        playMovieOnScreen(state.playlistVideos[0]);
+      } else {
+        alert("No hay vídeos disponibles para reproducir.");
       }
     };
   }
