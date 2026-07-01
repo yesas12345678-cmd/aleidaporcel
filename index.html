@@ -229,75 +229,61 @@
     </div>
   </section>
 
-  <!-- ================= SECTION 5: GALERÍA DE VÍDEOS (SALA DE CINE) ================= -->
-  <section id="sec-videos" class="page-section py-20 px-4 flex flex-col justify-start">
-    <div class="text-center mb-6 max-w-xl mx-auto z-20">
-      <h2 class="serif-title text-4xl tracking-widest text-white mb-2">Sala de Cine</h2>
-      <p class="text-xs uppercase tracking-widest text-neon-cyan/70 font-light">Nuestra historia proyectada en la gran pantalla.</p>
-    </div>
-
-    <!-- The Theater Room Container -->
-    <div class="theater-room w-full max-w-5xl mx-auto relative flex flex-col items-center z-10" style="margin-bottom: 2rem;">
-      <!-- Projector Ray Effect (glowing light coming down) -->
-      <div class="projector-ray"></div>
-
-      <!-- The Screen Frame (with curtains) -->
-      <div class="cinema-screen-container relative w-full aspect-video max-w-3xl rounded-lg overflow-hidden border-4 border-zinc-800 shadow-2xl">
-        <!-- Curtains on Left & Right -->
-        <div class="cinema-curtain curtain-left"></div>
-        <div class="cinema-curtain curtain-right"></div>
+  <!-- ================= SECTION 5: GALERÍA DE VÍDEOS (POV CINEMA) ================= -->
+  <section id="sec-videos" class="page-section w-full h-screen overflow-hidden flex flex-col justify-center items-center bg-black relative">
+    
+    <!-- POV Cinema Room Viewport -->
+    <div class="pov-theater-container w-full h-full flex items-center justify-center relative">
+      <div id="pov-viewport" class="pov-theater-viewport transition-transform duration-1000 ease-out">
+        <!-- Projector light ray -->
+        <div class="pov-projector-ray"></div>
         
-        <!-- Video Player Element (The Screen itself) -->
-        <div class="cinema-screen-glass"></div>
-        <video id="theater-video-element" class="w-full h-full object-cover bg-black" controls></video>
-        
-        <!-- Screen Placeholder (if no video selected/loaded) -->
-        <div id="cinema-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-black/90 text-center p-6 transition-opacity duration-500 z-10">
-          <i class="fas fa-ticket-alt text-4xl text-neon-cyan/60 mb-3 animate-pulse"></i>
-          <h4 class="text-lg text-white font-semibold">Pantalla Lista</h4>
-          <p class="text-xs text-gray-500 max-w-xs mt-1">Selecciona una película de la cartelera inferior para comenzar la proyección.</p>
-        </div>
-      </div>
-
-      <!-- The Seats Row (Foreground) -->
-      <div class="theater-seats-row flex justify-center gap-6 w-full max-w-2xl mt-8 relative">
-        <!-- Seat Left -->
-        <div class="theater-seat">
-          <div class="seat-back"></div>
-          <div class="seat-cushion"></div>
-          <div class="seat-armrest left-arm"></div>
-          <div class="seat-armrest right-arm"></div>
-        </div>
-
-        <!-- Seat Center (Active Seat) -->
-        <div class="theater-seat active-seat">
-          <div class="seat-back"></div>
-          <div class="seat-cushion"></div>
-          <div class="seat-armrest left-arm"></div>
-          <div class="seat-armrest right-arm">
-            <!-- Popcorn Bucket placed on the armrest! -->
-            <div class="theater-popcorn">
-              <div class="popcorn-fluff"></div>
-            </div>
+        <!-- The Projection Screen overlay -->
+        <div class="pov-screen shadow-2xl">
+          <video id="theater-video-element" class="w-full h-full object-cover bg-black" controls></video>
+          
+          <!-- Cinema Curtains inside the screen -->
+          <div class="pov-curtain curtain-left"></div>
+          <div class="pov-curtain curtain-right"></div>
+          
+          <!-- Screen Placeholder -->
+          <div id="cinema-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-black/95 text-center p-4 z-20">
+            <i class="fas fa-ticket-alt text-2xl text-neon-cyan/70 mb-2 animate-pulse"></i>
+            <h4 class="text-xs uppercase tracking-widest text-white font-bold">Pantalla Lista</h4>
+            <p class="text-[10px] text-gray-500 max-w-xs mt-1">Elige una película de la cartelera para comenzar la proyección.</p>
           </div>
         </div>
-
-        <!-- Seat Right -->
-        <div class="theater-seat">
-          <div class="seat-back"></div>
-          <div class="seat-cushion"></div>
-          <div class="seat-armrest left-arm"></div>
-          <div class="seat-armrest right-arm"></div>
+      </div>
+      
+      <!-- Overlay Floating Billboard (Cartelera) -->
+      <div id="cinema-billboard-overlay" class="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity duration-500">
+        <div class="glass-premium p-6 rounded-2xl w-full max-w-3xl flex flex-col max-h-[85vh] shadow-2xl border border-white/10">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2 class="serif-title text-3xl text-white">Cartelera de Cine</h2>
+              <p class="text-[10px] uppercase tracking-widest text-neon-cyan/70 font-light mt-1">Nuestra historia de amor en la gran pantalla.</p>
+            </div>
+            <button id="btn-close-billboard" class="w-8 h-8 rounded-full bg-white/10 text-white hover:bg-red-500 hover:text-white transition-all flex items-center justify-center">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          
+          <!-- Poster Selection Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 overflow-y-auto pr-2" id="video-gallery-grid" style="scrollbar-width: thin;">
+            <!-- Generated dynamically via JS -->
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Movie Billboard / Selection Grid (Bottom) -->
-    <div class="w-full max-w-5xl mx-auto px-6 z-20">
-      <h3 class="text-xs uppercase tracking-widest text-gray-400 font-bold mb-4 font-sans">Cartelera de Películas</h3>
-      <div class="flex gap-4 overflow-x-auto pb-4 scroll-smooth" id="video-gallery-grid">
-        <!-- Movies generated via JS -->
-      </div>
+      <!-- Floating Button to Open Billboard when playing -->
+      <button id="btn-open-billboard" class="absolute top-6 left-6 px-4 py-2 rounded-full glass-premium text-white hover:text-neon-cyan transition-all flex items-center gap-2 z-40 shadow-lg text-xs tracking-wider uppercase font-semibold hidden">
+        <i class="fas fa-film"></i> Cartelera
+      </button>
+
+      <!-- Floating Button to Toggle Zoom POV / Full Screen Video -->
+      <button id="btn-toggle-cinema-zoom" class="absolute top-6 right-6 px-4 py-2 rounded-full glass-premium text-white hover:text-neon-cyan transition-all flex items-center gap-2 z-40 shadow-lg text-xs tracking-wider uppercase font-semibold hidden">
+        <i class="fas fa-search-plus"></i> Zoom Pantalla
+      </button>
     </div>
   </section>
 

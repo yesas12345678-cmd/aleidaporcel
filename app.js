@@ -601,6 +601,7 @@ async function setupUniverseSection() {
 let isDraggingRoom = false;
 let previousMousePosition = { x: 0, y: 0 };
 let roomRotation = { x: -10, y: 0 }; // starting angles (tilt down slightly)
+let isZoomedIn = false;
 
 async function setupConstellationSection() {
   const viewport = document.getElementById('dining-room-viewport');
@@ -1053,7 +1054,7 @@ function closeLightbox() {
   }
 }
 
-// 4. Galería de Vídeos Section (Sala de Cine)
+// 4. Galería de Vídeos Section (Sala de Cine POV)
 async function setupVideoSection() {
   const grid = document.getElementById('video-gallery-grid');
   if (!grid) return;
@@ -1063,47 +1064,58 @@ async function setupVideoSection() {
   // Filter for video gallery assets, completely removing the slice limit!
   const videos = media.filter(m => m.section === 'video-gallery' && m.type.startsWith('video/'));
 
-  // Reset screen
-  const screenContainer = document.querySelector('.cinema-screen-container');
+  // Reset screen and viewport
+  const viewport = document.getElementById('pov-viewport');
   const placeholder = document.getElementById('cinema-placeholder');
   const videoEl = document.getElementById('theater-video-element');
-  
-  if (screenContainer) screenContainer.classList.remove('screen-playing');
+  const billboardOverlay = document.getElementById('cinema-billboard-overlay');
+  const btnOpenBillboard = document.getElementById('btn-open-billboard');
+  const btnToggleCinemaZoom = document.getElementById('btn-toggle-cinema-zoom');
+
+  if (viewport) {
+    viewport.classList.remove('screen-playing', 'viewport-submerged', 'viewport-cinema-fullscreen');
+  }
   if (placeholder) placeholder.classList.remove('hidden');
   if (videoEl) {
     videoEl.pause();
     videoEl.src = "";
     videoEl.load();
   }
+  if (billboardOverlay) {
+    billboardOverlay.classList.remove('hidden-overlay');
+  }
+  if (btnOpenBillboard) btnOpenBillboard.classList.add('hidden');
+  if (btnToggleCinemaZoom) {
+    btnToggleCinemaZoom.classList.add('hidden');
+    btnToggleCinemaZoom.innerHTML = '<i class="fas fa-search-plus"></i> Zoom Pantalla';
+  }
+  isZoomedIn = false;
 
   if (videos.length === 0) {
-    grid.innerHTML = '<div class="text-center text-gray-500 font-light py-8 w-full">No hay películas en cartelera aún. Sube vídeos desde el panel de administración.</div>';
+    grid.innerHTML = '<div class="text-center text-gray-500 font-light py-8 col-span-full">No hay películas en cartelera aún. Sube vídeos desde el panel de administración.</div>';
     return;
   }
 
   videos.forEach((video) => {
     const card = document.createElement('div');
-    card.className = 'movie-poster-card';
+    card.className = 'movie-poster-item';
 
     card.innerHTML = `
-      <div class="movie-poster-thumb">
+      <div class="movie-poster-item-thumb">
         <i class="fas fa-film"></i>
         <div class="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-[10px] text-neon-cyan border border-neon-cyan/30">
           <i class="fas fa-play" style="font-size: 8px; margin-left: 2px; color: var(--color-accent);"></i>
         </div>
       </div>
-      <div class="movie-poster-info">
-        <div class="movie-poster-title">${video.name}</div>
-        <div class="movie-poster-subtitle">Proyectar</div>
+      <div class="movie-poster-item-info">
+        <div class="movie-poster-item-title">${video.name}</div>
+        <div class="movie-poster-item-subtitle">Proyectar</div>
       </div>
     `;
 
     card.onclick = () => {
-      // Remove active class from all posters
-      document.querySelectorAll('.movie-poster-card').forEach(c => c.classList.remove('active-poster'));
-      card.classList.add('active-poster');
-
-      // Play video on the main screen
+      document.querySelectorAll('.movie-poster-item').forEach(c => c.classList.remove('active-item'));
+      card.classList.add('active-item');
       playMovieOnScreen(video);
     };
 
@@ -1111,20 +1123,28 @@ async function setupVideoSection() {
   });
 
   // GSAP animation for movie posters pop-in
-  gsap.fromTo('.movie-poster-card', 
-    { opacity: 0, scale: 0.9, y: 20 }, 
-    { opacity: 1, scale: 1, y: 0, duration: 0.6, stagger: 0.05, ease: 'power2.out' }
+  gsap.fromTo('.movie-poster-item', 
+    { opacity: 0, scale: 0.9, y: 15 }, 
+    { opacity: 1, scale: 1, y: 0, duration: 0.5, stagger: 0.05, ease: 'power2.out' }
   );
 }
 
 function playMovieOnScreen(video) {
   stopAllMedia();
-  const screenContainer = document.querySelector('.cinema-screen-container');
+  const viewport = document.getElementById('pov-viewport');
   const placeholder = document.getElementById('cinema-placeholder');
   const videoEl = document.getElementById('theater-video-element');
+  const billboardOverlay = document.getElementById('cinema-billboard-overlay');
+  const btnOpenBillboard = document.getElementById('btn-open-billboard');
+  const btnToggleCinemaZoom = document.getElementById('btn-toggle-cinema-zoom');
 
   if (placeholder) placeholder.classList.add('hidden');
-  if (screenContainer) screenContainer.classList.add('screen-playing');
+  if (viewport) {
+    viewport.classList.add('screen-playing', 'viewport-submerged');
+  }
+  if (billboardOverlay) billboardOverlay.classList.add('hidden-overlay');
+  if (btnOpenBillboard) btnOpenBillboard.classList.remove('hidden');
+  if (btnToggleCinemaZoom) btnToggleCinemaZoom.classList.remove('hidden');
 
   videoEl.src = getMediaUrl(video);
   videoEl.play();
@@ -1794,6 +1814,46 @@ function bindUIEvents() {
 
   document.getElementById('btn-close-lightbox').onclick = closeLightbox;
   document.getElementById('lightbox-bg').onclick = closeLightbox;
+
+  // Billboard & Zoom Controls for Cinema Room
+  const billboardOverlay = document.getElementById('cinema-billboard-overlay');
+  const btnOpenBillboard = document.getElementById('btn-open-billboard');
+  const btnCloseBillboard = document.getElementById('btn-close-billboard');
+  const btnToggleCinemaZoom = document.getElementById('btn-toggle-cinema-zoom');
+  const povViewport = document.getElementById('pov-viewport');
+  const videoEl = document.getElementById('theater-video-element');
+
+  if (btnCloseBillboard) {
+    btnCloseBillboard.onclick = () => {
+      billboardOverlay.classList.add('hidden-overlay');
+      if (videoEl.src) {
+        videoEl.play();
+        povViewport.classList.add('screen-playing');
+      }
+    };
+  }
+
+  if (btnOpenBillboard) {
+    btnOpenBillboard.onclick = () => {
+      billboardOverlay.classList.remove('hidden-overlay');
+      videoEl.pause();
+    };
+  }
+
+  if (btnToggleCinemaZoom) {
+    btnToggleCinemaZoom.onclick = () => {
+      isZoomedIn = !isZoomedIn;
+      if (isZoomedIn) {
+        povViewport.classList.remove('viewport-submerged');
+        povViewport.classList.add('viewport-cinema-fullscreen');
+        btnToggleCinemaZoom.innerHTML = '<i class="fas fa-search-minus"></i> Modo POV';
+      } else {
+        povViewport.classList.remove('viewport-cinema-fullscreen');
+        povViewport.classList.add('viewport-submerged');
+        btnToggleCinemaZoom.innerHTML = '<i class="fas fa-search-plus"></i> Zoom Pantalla';
+      }
+    };
+  }
 
 
   // Toggle ambient music loop playback
