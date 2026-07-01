@@ -1461,4 +1461,137 @@ body {
   will-change: transform;
 }
 
+/* Holographic Star Radar Styling */
+.radar-screen {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 242, 255, 0.35);
+  background: rgba(8, 6, 12, 0.7);
+  box-shadow: 
+    0 0 30px rgba(0, 242, 255, 0.2), 
+    inset 0 0 30px rgba(0, 242, 255, 0.15);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1.5rem auto 2.5rem;
+  cursor: pointer;
+  will-change: transform;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+}
 
+.radar-screen:hover {
+  border-color: rgba(0, 242, 255, 0.6);
+  box-shadow: 
+    0 0 40px rgba(0, 242, 255, 0.3), 
+    inset 0 0 40px rgba(0, 242, 255, 0.2);
+}
+
+.radar-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: 
+    radial-gradient(circle, transparent 30%, rgba(0, 242, 255, 0.08) 30.5%, transparent 31%, transparent 60%, rgba(0, 242, 255, 0.08) 60.5%, transparent 61%),
+    linear-gradient(90deg, transparent 49.5%, rgba(0, 242, 255, 0.08) 50%, transparent 50.5%),
+    linear-gradient(0deg, transparent 49.5%, rgba(0, 242, 255, 0.08) 50%, transparent 50.5%);
+  z-index: 2;
+}
+
+.radar-sweep {
+  position: absolute;
+  width: 50%;
+  height: 50%;
+  top: 0;
+  left: 50%;
+  transform-origin: bottom left;
+  background: linear-gradient(60deg, rgba(0, 242, 255, 0.3) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 3;
+  animation: radar-spin 4s linear infinite;
+  will-change: transform;
+}
+
+.radar-scanning .radar-sweep {
+  animation: radar-spin-fast 0.6s linear infinite;
+}
+
+@keyframes radar-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes radar-spin-fast {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.radar-core-btn {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(5, 5, 8, 0.95);
+  border: 2px solid #00f2ff;
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: all 0.4s ease;
+}
+
+.radar-screen:hover .radar-core-btn {
+  box-shadow: 0 0 25px rgba(0, 242, 255, 0.8);
+  transform: scale(1.05);
+}
+
+.radar-signal-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00f2ff;
+  box-shadow: 0 0 12px #00f2ff;
+  opacity: 0.65;
+  z-index: 4;
+  animation: radar-ping 2.5s infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes radar-ping {
+  0% { transform: scale(0.8); opacity: 0.4; }
+  100% { transform: scale(1.3); opacity: 0.9; }
+}
+
+.radar-lock-cursor {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 1.5px dashed #ff007f;
+  border-radius: 50%;
+  animation: radar-lock-spin 1.5s linear infinite;
+  display: none;
+  pointer-events: none;
+  z-index: 5;
+  margin-top: -8px; /* Offset to center over the signal dot */
+  margin-left: -8px;
+}
+
+@keyframes radar-lock-spin {
+  from { transform: rotate(0deg) scale(1.4); }
+  to { transform: rotate(360deg) scale(0.9); }
+}
+
+/* Radar Scan particle splash */
+.radar-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ff007f;
+  pointer-events: none;
+  z-index: 6;
+}

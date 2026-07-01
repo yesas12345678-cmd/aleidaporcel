@@ -1181,11 +1181,43 @@ function playMovieOnScreen(video) {
   videoEl.play();
 }
 
+function createRadarParticles(x, y, parent) {
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'radar-particle';
+    p.style.left = `${x}px`;
+    p.style.top = `${y}px`;
+    parent.appendChild(p);
+
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * 50 + 20;
+    const tx = Math.cos(angle) * dist;
+    const ty = Math.sin(angle) * dist;
+
+    gsap.to(p, {
+      x: tx,
+      y: ty,
+      opacity: 0,
+      scale: 0.2,
+      duration: 0.8,
+      ease: 'power2.out',
+      onComplete: () => p.remove()
+    });
+  }
+}
+
 // 5. Generador de Fotos y Vídeos Aleatorios
 async function triggerRandomMemory() {
-  const container = document.getElementById('random-memory-container');
-  container.classList.remove('hidden');
-  container.innerHTML = '<div class="text-neon-cyan animate-spin"><i class="fas fa-atom text-2xl"></i></div>';
+  const content = document.getElementById('random-memory-content');
+  if (!content) return;
+  content.innerHTML = '<div class="text-neon-cyan animate-spin py-12"><i class="fas fa-atom text-2xl"></i></div>';
+
+  // Open modal first
+  const modal = document.getElementById('random-memory-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    gsap.fromTo(modal, { opacity: 0 }, { opacity: 1, duration: 0.3 });
+  }
 
   // Gather all items from media
   const media = await dbGetAllMedia();
@@ -1197,51 +1229,38 @@ async function triggerRandomMemory() {
   );
 
   if (pool.length === 0) {
-    container.innerHTML = '<span class="text-gray-500 text-xs font-light">No hay fotos en el Museo ni vídeos en la Galería todavía. Sube archivos desde el panel de administración.</span>';
+    content.innerHTML = '<span class="text-gray-500 text-xs font-light text-center py-6">No hay fotos en el Museo ni vídeos en la Galería todavía. Sube archivos desde el panel de administración.</span>';
     return;
   }
 
-  // Animate Orb explosion/pulse
-  const orb = document.getElementById('btn-generate-random').querySelector('.w-32');
-  gsap.fromTo(orb, { scale: 1 }, { scale: 1.15, duration: 0.2, yoyo: true, repeat: 1 });
-
-  // Delay for cinematic suspense
-  setTimeout(() => {
-    const item = pool[Math.floor(Math.random() * pool.length)];
-    const url = getMediaUrl(item);
-    
-    stopAllMedia();
-    
-    let elementHTML = '';
-    let label = '';
-    
-    if (item.type.startsWith('image/')) {
-      elementHTML = `
-        <div class="relative rounded-lg overflow-hidden border border-white/10 shadow-2xl shadow-neon-cyan/20 max-w-[400px]">
-          <img class="max-h-[350px] w-full object-contain rounded" src="${url}" alt="Foto aleatoria">
-          <div class="absolute inset-0 bg-gradient-to-t from-space/30 to-transparent pointer-events-none"></div>
-        </div>
-      `;
-      label = 'Imagen de Nuestro Museo';
-    } else if (item.type.startsWith('video/')) {
-      elementHTML = `
-        <div class="relative rounded-lg overflow-hidden border border-white/10 shadow-2xl shadow-neon-purple/20 max-w-[400px]">
-          <video class="w-full max-h-[350px] rounded" controls autoplay src="${url}"></video>
-        </div>
-      `;
-      label = 'Vídeo de Nuestra Galería';
-    }
-    
-    container.innerHTML = `
-      <div class="flex flex-col items-center gap-4 w-full p-2">
-        ${elementHTML}
-        <span class="text-[10px] uppercase tracking-widest text-neon-cyan font-semibold">${label}</span>
+  const item = pool[Math.floor(Math.random() * pool.length)];
+  const url = getMediaUrl(item);
+  
+  stopAllMedia();
+  
+  let elementHTML = '';
+  
+  if (item.type.startsWith('image/')) {
+    elementHTML = `
+      <div class="relative rounded-lg overflow-hidden border border-white/10 shadow-2xl shadow-neon-cyan/20 max-w-[400px]">
+        <img class="max-h-[380px] w-full object-contain rounded" src="${url}" alt="Foto aleatoria">
+        <div class="absolute inset-0 bg-gradient-to-t from-space/30 to-transparent pointer-events-none"></div>
       </div>
     `;
-    
-    // Fade-in dynamic random layout
-    gsap.fromTo(container, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
-  }, 600);
+  } else if (item.type.startsWith('video/')) {
+    elementHTML = `
+      <div class="relative rounded-lg overflow-hidden border border-white/10 shadow-2xl shadow-neon-purple/20 max-w-[400px] bg-black">
+        <!-- Living cinemagraph style loop with autoplay, muted, loop, playsinline and no controls -->
+        <video class="w-full max-h-[380px] rounded object-contain" autoplay loop muted playsinline src="${url}"></video>
+      </div>
+    `;
+  }
+  
+  content.innerHTML = `
+    <div class="flex flex-col items-center w-full p-2">
+      ${elementHTML}
+    </div>
+  `;
 }
 
 
@@ -1921,8 +1940,69 @@ function bindUIEvents() {
     }
   };
 
-  // Generate random photo
-  document.getElementById('btn-generate-random').onclick = triggerRandomMemory;
+  // Holographic Radar Memory Scan
+  const radar = document.getElementById('radar-screen');
+  const lockCursor = document.getElementById('radar-lock-cursor');
+  const randomModal = document.getElementById('random-memory-modal');
+  const btnCloseRandomModal = document.getElementById('btn-close-random-modal');
+  
+  state.radarScanning = false;
+
+  if (radar) {
+    radar.onclick = () => {
+      if (state.radarScanning) return;
+      state.radarScanning = true;
+      
+      // Acelerar radar
+      radar.classList.add('radar-scanning');
+      
+      // Elegir estrella de señal aleatoria
+      const dots = radar.querySelectorAll('.radar-signal-dot');
+      if (dots.length > 0) {
+        const targetDot = dots[Math.floor(Math.random() * dots.length)];
+        
+        // Colocar mira láser
+        if (lockCursor) {
+          lockCursor.style.top = targetDot.style.top;
+          lockCursor.style.left = targetDot.style.left;
+          lockCursor.style.display = 'block';
+          
+          // Animar cursor latiendo
+          gsap.fromTo(lockCursor, { scale: 1.5, opacity: 0.3 }, { scale: 0.9, opacity: 1, duration: 0.5, repeat: 2 });
+        }
+        
+        // Esperar 1.5s de suspenso de escaneo
+        setTimeout(() => {
+          // Explosión de partículas
+          createRadarParticles(targetDot.offsetLeft, targetDot.offsetTop, radar);
+          
+          // Detener animaciones y abrir foto/vídeo en modal
+          radar.classList.remove('radar-scanning');
+          if (lockCursor) lockCursor.style.display = 'none';
+          state.radarScanning = false;
+          
+          triggerRandomMemory();
+        }, 1500);
+      }
+    };
+  }
+
+  // Close Random Memory Modal Action
+  if (btnCloseRandomModal) {
+    btnCloseRandomModal.onclick = () => {
+      if (randomModal) {
+        gsap.to(randomModal, {
+          opacity: 0,
+          duration: 0.3,
+          onComplete: () => {
+            randomModal.classList.add('hidden');
+            document.getElementById('random-memory-content').innerHTML = '';
+            stopAllMedia();
+          }
+        });
+      }
+    };
+  }
 
 
 

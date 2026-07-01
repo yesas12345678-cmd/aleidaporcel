@@ -239,24 +239,46 @@
   </section>
 
   <!-- ================= SECTION 6: ARCHIVO ALEATORIO (RANDOM GENERATOR) ================= -->
-  <section id="sec-archivo" class="page-section">
-    <div class="w-full max-w-2xl px-6 text-center flex flex-col items-center justify-center min-h-[80vh]">
+  <section id="sec-archivo" class="page-section flex flex-col justify-center items-center py-20">
+    <div class="w-full max-w-2xl px-6 text-center flex flex-col items-center justify-center">
       <h2 class="serif-title text-4xl tracking-widest text-white mb-4">El Archivo de la Memoria</h2>
-      <p class="text-sm font-light text-gray-400 mb-12 max-w-md">Una inmersión aleatoria en el tiempo. Pulsa el orbe para revivir un fragmento del infinito.</p>
+      <p class="text-sm font-light text-gray-400 mb-10 max-w-md">Una inmersión aleatoria en el tiempo. Pulsa el radar holográfico para escanear y revivir un recuerdo de nuestro universo.</p>
       
-      <!-- Interactive Generator Orb -->
-      <div class="relative mb-12 cursor-pointer group" id="btn-generate-random">
-        <div class="absolute inset-0 w-32 h-32 bg-neon-cyan/20 rounded-full blur-xl group-hover:bg-neon-purple/30 group-hover:scale-110 transition-all duration-700 animate-pulse"></div>
-        <div class="w-32 h-32 rounded-full glass-premium border border-neon-cyan/40 flex items-center justify-center group-hover:border-neon-purple transition-all duration-500 scale-95 group-hover:scale-100 shadow-inner">
-          <i class="fas fa-atom text-4xl text-neon-cyan group-hover:text-neon-purple group-hover:rotate-180 transition-all duration-1000"></i>
+      <!-- Holographic Star Radar -->
+      <div id="radar-screen" class="radar-screen">
+        <div class="radar-grid"></div>
+        <div class="radar-sweep"></div>
+        
+        <!-- Target Signal Dots at different coordinates -->
+        <div class="radar-signal-dot" style="top: 25%; left: 30%;"></div>
+        <div class="radar-signal-dot" style="top: 70%; left: 20%;"></div>
+        <div class="radar-signal-dot" style="top: 40%; left: 75%;"></div>
+        <div class="radar-signal-dot" style="top: 15%; left: 60%;"></div>
+        <div class="radar-signal-dot" style="top: 80%; left: 65%;"></div>
+        
+        <!-- Lock-on Cursor -->
+        <div id="radar-lock-cursor" class="radar-lock-cursor"></div>
+        
+        <!-- Radar Core Button -->
+        <div class="radar-core-btn">
+          <i class="fas fa-satellite-dish text-xl text-neon-cyan"></i>
         </div>
       </div>
       
-      <span class="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-6">Generador de Recuerdos</span>
+      <span class="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-6">Escáner Holográfico de Recuerdos</span>
+    </div>
 
-      <!-- Container where random photo/video will be rendered -->
-      <div id="random-memory-container" class="w-full min-h-[250px] p-6 rounded-xl glass-premium border border-white/5 flex items-center justify-center text-center transition-all duration-500 hidden">
-        <!-- Rendered via JS -->
+    <!-- Modal for Random Memory -->
+    <div id="random-memory-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md hidden transition-opacity duration-300">
+      <div class="glass-premium p-6 rounded-2xl max-w-md w-full mx-4 border border-white/10 shadow-2xl relative flex flex-col items-center">
+        <!-- Close button -->
+        <button id="btn-close-random-modal" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 text-white hover:bg-red-500 hover:text-white transition-all flex items-center justify-center z-10">
+          <i class="fas fa-times"></i>
+        </button>
+        
+        <div id="random-memory-content" class="w-full flex flex-col items-center gap-4">
+          <!-- Image or Video rendered here via JS -->
+        </div>
       </div>
     </div>
   </section>
