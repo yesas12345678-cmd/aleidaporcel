@@ -61,7 +61,6 @@
       <i class="fas fa-chevron-up"></i>
     </button>
     <button data-target="universo" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Universo"></button>
-    <button data-target="constelacion" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Constelación"></button>
     <button data-target="museo" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Museo"></button>
     <button data-target="videos" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Galería de Vídeos"></button>
     <button data-target="archivo" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Instantes al Azar"></button>
@@ -137,48 +136,6 @@
       <h2 id="universe-phrase" class="serif-title text-4xl md:text-5xl italic leading-relaxed text-gray-100 font-light mb-8 max-w-2xl px-4 opacity-0 transition-opacity duration-1000">
         "En un universo infinito, tuve la suerte de coincidir contigo."
       </h2>
-      <button id="btn-enter-constellation" class="px-8 py-3 rounded-full border border-neon-cyan/40 hover:bg-neon-cyan hover:text-space hover:border-neon-cyan transition-all duration-300 uppercase tracking-widest text-xs font-semibold hover:shadow-lg hover:shadow-neon-cyan/30" style="display: none !important;">
-        Explorar Constelación <i class="fas fa-arrow-right ml-2 text-[10px]"></i>
-      </button>
-    </div>
-  </section>
-
-  <!-- ================= SECTION 3: CONSTELACIÓN (LABERINTO 3D) ================= -->
-  <section id="sec-constelacion" class="page-section">
-    <div class="absolute top-24 left-1/2 -translate-x-1/2 z-20 text-center w-full px-6 pointer-events-none">
-      <h2 class="serif-title text-3xl md:text-4xl tracking-widest text-white mb-2">Laberinto de los Recuerdos</h2>
-      <p class="text-xs uppercase tracking-widest text-neon-cyan/70 font-light">Explora el laberinto 3D y encuentra la salida. Haz clic en las fotos para verlas.</p>
-    </div>
-
-    <!-- 3D Labyrinth Viewport Container -->
-    <div id="dining-room-viewport" class="scene-3d w-full h-screen flex items-center justify-center overflow-hidden">
-      <!-- 3D Labyrinth Room wrapper -->
-      <div class="labyrinth-container" style="perspective: 600px; width: 100%; height: 100%; position: relative; overflow: hidden;">
-        <!-- The Labyrinth Camera/World -->
-        <div id="labyrinth-world" style="width: 100%; height: 100%; position: absolute; transform-style: preserve-3d; transition: transform 0.1s ease-out;">
-          <!-- Walls will be generated dynamically here -->
-        </div>
-      </div>
-      
-      <!-- Labyrinth Overlay / Success message -->
-      <div id="labyrinth-success-overlay" class="absolute inset-0 bg-space/95 backdrop-blur-md flex flex-col items-center justify-center z-30 hidden">
-        <div class="glass-premium p-8 rounded-2xl max-w-md text-center border border-neon-cyan/30 shadow-2xl">
-          <i class="fas fa-trophy text-5xl text-neon-cyan mb-4 animate-bounce"></i>
-          <h3 class="serif-title text-3xl text-white mb-2">¡Encontraste la Salida!</h3>
-          <p class="text-xs text-gray-400 mb-6">Has recorrido el laberinto de nuestros recuerdos con éxito y has encontrado la salida.</p>
-          <button id="btn-labyrinth-continue" class="px-6 py-3 bg-neon-cyan text-space font-bold uppercase tracking-widest text-xs rounded-lg hover:bg-white transition-all shadow-md">
-            Continuar al Museo
-          </button>
-        </div>
-      </div>
-
-      <!-- Keyboard controls instructions (Centered overlay that fades out) -->
-      <div id="labyrinth-instructions" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 glass-premium px-4 py-2 rounded-full z-20 text-[9px] text-gray-300 uppercase tracking-widest flex items-center gap-3">
-        <span>Moverse: <b class="text-neon-cyan">W A S D</b> o <b class="text-neon-cyan">Flechas</b></span>
-        <span class="text-white/20">|</span>
-        <span>Meta: Encuentra la Salida</span>
-      </div>
-    </div>
   </section>
 
   <!-- ================= SECTION 4: MUSEO (POLAROID GALLERY) ================= -->

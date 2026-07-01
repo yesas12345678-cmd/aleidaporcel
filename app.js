@@ -14,8 +14,8 @@ const state = {
   db: null,
   isAuthenticated: false,
   isAdmin: false,
-  currentChapter: 'universo', // universo, constelacion, museo, videos, archivo, final
-  chapters: ['universo', 'constelacion', 'museo', 'videos', 'archivo', 'final'],
+  currentChapter: 'universo', // universo, museo, videos, archivo, final
+  chapters: ['universo', 'museo', 'videos', 'archivo', 'final'],
   constellationPan: { x: 0, y: 0 },
   activeAudio: null, // Track currently playing audio to avoid overlaps
   typewriterInterval: null, // Track typewriter interval to prevent text accumulation
@@ -590,10 +590,10 @@ async function setupUniverseSection() {
   // Salida/desvanecimiento de los elementos del universo
   gsap.to([photoFrame, universePhrase], { opacity: 0, scale: 0.9, duration: 1.5, delay: 8.0, ease: 'power2.in' });
 
-  // Transición automática al siguiente capítulo (Constelación) a los 10 segundos
+  // Transición automática al siguiente capítulo (Museo) a los 10 segundos
   state.universeTimeout = setTimeout(() => {
     state.universeTimeout = null;
-    navigateTo('constelacion');
+    navigateTo('museo');
   }, 10000);
 }
 
@@ -1806,9 +1806,12 @@ function bindUIEvents() {
   });
 
   // Enter experience button from Universo Intro
-  document.getElementById('btn-enter-constellation').onclick = () => {
-    navigateTo('constelacion');
-  };
+  const btnEnterConstellation = document.getElementById('btn-enter-constellation');
+  if (btnEnterConstellation) {
+    btnEnterConstellation.onclick = () => {
+      navigateTo('museo');
+    };
+  }
 
 
 
