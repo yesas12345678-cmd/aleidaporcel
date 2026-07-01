@@ -1200,10 +1200,10 @@ body {
 
 .pov-projector-ray {
   position: absolute;
-  top: 14.5%;
-  left: 27%;
-  width: 46.5%;
-  height: 28%;
+  top: 15.5%;
+  left: 41.3%;
+  width: 17.4%;
+  height: 44.5%;
   background: radial-gradient(circle at 50% 0%, rgba(0, 242, 255, 0.08) 0%, transparent 80%);
   mix-blend-mode: screen;
   pointer-events: none;
@@ -1218,10 +1218,10 @@ body {
 
 .pov-screen {
   position: absolute;
-  top: 14.5%;
-  left: 27%;
-  width: 46.5%;
-  height: 28%;
+  top: 15.5%;
+  left: 41.3%;
+  width: 17.4%;
+  height: 44.5%;
   background: black;
   z-index: 10;
   overflow: hidden;
