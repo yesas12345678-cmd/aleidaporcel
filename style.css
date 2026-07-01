@@ -881,6 +881,27 @@ body {
   transform: scale(0.98) !important;
 }
 
+/* Individual Login Page background with Cinema room overlay */
+#sec-login {
+  background-image: url('login_bg.jpg') !important;
+  background-size: cover !important;
+  background-position: center !important;
+  position: relative;
+}
+
+#sec-login::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 5, 8, 0.85); /* Dark screen to keep login form highly legible */
+  z-index: 1;
+}
+
+#sec-login > * {
+  position: relative;
+  z-index: 2; /* Force content above the dark mask */
+}
+
 /* Glowing Neon Frame around the viewport for login screens */
 #sec-login::before,
 #sec-admin-login::before {
