@@ -3,9 +3,60 @@ const express = require('express');
 const { Pool } = require('pg');
 const multer = require('multer');
 const path = require('path');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Security configuration: Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.tailwindcss.com", "https://cdn.jsdelivr.net"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https://images.unsplash.com", "blob:"],
+      mediaSrc: ["'self'", "blob:", "https://www.soundhelix.com", "data:"],
+      connectSrc: ["'self'"]
+    }
+  },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  xFrameOptions: { action: 'deny' }
+}));
+
+// Cookie parser configuration
+app.use(cookieParser());
+
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secreto_super_secreto_para_desarrollo_local_12345';
+
+// Auth variables from env (with secure defaults for local dev)
+const validDates = (process.env.USER_LOGIN_DATES || '14/05/26,14/05/2026,14-05-26,14-05-2026')
+  .split(',')
+  .map(d => d.trim());
+const userPass = process.env.USER_PASSWORD || '1206';
+const adminPass = process.env.ADMIN_PASSWORD || 'Manuel1214$';
+
+// General API rate limiter
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 500, // Limit each IP to 500 requests per 15 minutes
+  message: { error: 'Demasiadas peticiones desde esta IP, por favor inténtalo más tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Authentication rate limiter
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 login attempts per 15 minutes
+  message: { error: 'Demasiados intentos de inicio de sesión. Por favor, inténtalo más tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 const { Client } = require('pg');
 
@@ -59,6 +110,9 @@ async function getPool() {
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
+// Apply rate limiter to all API endpoints
+app.use('/api', apiLimiter);
+
 // Middleware to ensure database is online before handling API requests
 app.use('/api', async (req, res, next) => {
   const currentPool = await getPool();
@@ -66,6 +120,103 @@ app.use('/api', async (req, res, next) => {
     return res.status(503).json({ error: 'Database is offline' });
   }
   next();
+});
+
+// Middleware to authenticate user or admin
+function authenticateUser(req, res, next) {
+  const token = req.cookies.session_token;
+  if (!token) {
+    return res.status(401).json({ error: 'Inicia sesión para acceder a este recurso' });
+  }
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded; // { role: 'user' or 'admin' }
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Sesión inválida o expirada' });
+  }
+}
+
+// Middleware to authenticate admin strictly
+function authenticateAdmin(req, res, next) {
+  const token = req.cookies.session_token;
+  if (!token) {
+    res.clearCookie('session_token');
+    return res.status(401).json({ error: 'Acceso denegado. Requiere privilegios de administrador' });
+  }
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.role !== 'admin') {
+      return res.status(403).json({ error: 'Acceso denegado. Requiere rol de administrador' });
+    }
+    req.user = decoded;
+    next();
+  } catch (err) {
+    res.clearCookie('session_token');
+    return res.status(401).json({ error: 'Sesión inválida o expirada' });
+  }
+}
+
+// Authentication endpoints
+app.post('/api/auth/login', authLimiter, (req, res) => {
+  const { date, password } = req.body;
+  if (!date || !password) {
+    return res.status(400).json({ error: 'Fecha y contraseña requeridas' });
+  }
+  if (validDates.includes(date) && password === userPass) {
+    const token = jwt.sign({ role: 'user' }, JWT_SECRET, { expiresIn: '7d' });
+    res.cookie('session_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+    return res.json({ success: true, role: 'user' });
+  } else {
+    return res.status(401).json({ error: 'Fecha o contraseña de inicio incorrectas' });
+  }
+});
+
+app.post('/api/auth/admin-login', authLimiter, (req, res) => {
+  const { password } = req.body;
+  if (!password) {
+    return res.status(400).json({ error: 'Contraseña requerida' });
+  }
+  if (password === adminPass) {
+    const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '1d' });
+    res.cookie('session_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
+    return res.json({ success: true, role: 'admin' });
+  } else {
+    return res.status(401).json({ error: 'Contraseña de administrador incorrecta' });
+  }
+});
+
+app.get('/api/auth/status', (req, res) => {
+  const token = req.cookies.session_token;
+  if (!token) {
+    return res.json({ isAuthenticated: false, isAdmin: false });
+  }
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return res.json({
+      isAuthenticated: true,
+      isAdmin: decoded.role === 'admin',
+      role: decoded.role
+    });
+  } catch (err) {
+    res.clearCookie('session_token');
+    return res.json({ isAuthenticated: false, isAdmin: false });
+  }
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  res.clearCookie('session_token');
+  res.json({ success: true });
 });
 
 // Configure multer for file uploads in memory
@@ -134,7 +285,7 @@ async function initDatabase() {
 // API Endpoints: Settings
 // ==========================================
 
-app.get('/api/settings/:key', async (req, res) => {
+app.get('/api/settings/:key', authenticateUser, async (req, res) => {
   try {
     const { key } = req.params;
     const result = await pool.query('SELECT value FROM settings WHERE key = $1', [key]);
@@ -148,7 +299,7 @@ app.get('/api/settings/:key', async (req, res) => {
   }
 });
 
-app.post('/api/settings', async (req, res) => {
+app.post('/api/settings', authenticateAdmin, async (req, res) => {
   try {
     const { key, value } = req.body;
     if (!key) return res.status(400).json({ error: 'Key is required' });
@@ -169,7 +320,7 @@ app.post('/api/settings', async (req, res) => {
 // ==========================================
 
 // Get all media metadata (excluding binary data)
-app.get('/api/media', async (req, res) => {
+app.get('/api/media', authenticateUser, async (req, res) => {
   try {
     const result = await pool.query(
       'SELECT id, name, type, section, associated_audio_id as "associatedAudioId", created_at as "createdAt" FROM media ORDER BY created_at DESC'
@@ -182,7 +333,7 @@ app.get('/api/media', async (req, res) => {
 });
 
 // Get specific media file binary contents with Range Requests support
-app.get('/api/media/:id/file', async (req, res) => {
+app.get('/api/media/:id/file', authenticateUser, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query('SELECT data, type FROM media WHERE id = $1', [id]);
@@ -226,7 +377,7 @@ app.get('/api/media/:id/file', async (req, res) => {
 });
 
 // Save media metadata and binary file via multipart upload
-app.post('/api/media', upload.single('file'), async (req, res) => {
+app.post('/api/media', authenticateAdmin, upload.single('file'), async (req, res) => {
   try {
     const { id, name, type, section, associatedAudioId } = req.body;
     const file = req.file;
@@ -251,7 +402,7 @@ app.post('/api/media', upload.single('file'), async (req, res) => {
 });
 
 // Delete media
-app.delete('/api/media/:id', async (req, res) => {
+app.delete('/api/media/:id', authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -269,7 +420,7 @@ app.delete('/api/media/:id', async (req, res) => {
 // ==========================================
 
 // Get all memories metadata (excluding binary data)
-app.get('/api/memories', async (req, res) => {
+app.get('/api/memories', authenticateUser, async (req, res) => {
   try {
     const result = await pool.query(
       'SELECT id, title, date, text, media_name as "mediaName", media_type as "mediaType", created_at as "createdAt" FROM memories ORDER BY date ASC'
@@ -282,7 +433,7 @@ app.get('/api/memories', async (req, res) => {
 });
 
 // Get specific memory media file binary contents with Range Requests support
-app.get('/api/memories/:id/file', async (req, res) => {
+app.get('/api/memories/:id/file', authenticateUser, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query('SELECT media_data, media_type FROM memories WHERE id = $1', [id]);
@@ -327,7 +478,7 @@ app.get('/api/memories/:id/file', async (req, res) => {
 
 
 // Save memory metadata and optional binary file via multipart upload
-app.post('/api/memories', upload.single('file'), async (req, res) => {
+app.post('/api/memories', authenticateAdmin, upload.single('file'), async (req, res) => {
   try {
     const { id, title, date, text } = req.body;
     const file = req.file;
@@ -354,7 +505,7 @@ app.post('/api/memories', upload.single('file'), async (req, res) => {
 });
 
 // Delete memory
-app.delete('/api/memories/:id', async (req, res) => {
+app.delete('/api/memories/:id', authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     await pool.query('DELETE FROM memories WHERE id = $1', [id]);
@@ -370,7 +521,7 @@ app.delete('/api/memories/:id', async (req, res) => {
 // ==========================================
 
 // Export full backup
-app.get('/api/backup', async (req, res) => {
+app.get('/api/backup', authenticateAdmin, async (req, res) => {
   try {
     // Fetch settings
     const settingsRes = await pool.query('SELECT key, value FROM settings');
@@ -416,7 +567,7 @@ app.get('/api/backup', async (req, res) => {
 });
 
 // Restore backup
-app.post('/api/restore', async (req, res) => {
+app.post('/api/restore', authenticateAdmin, async (req, res) => {
   const client = await pool.connect();
   try {
     const { settings, media, memories } = req.body;

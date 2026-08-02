@@ -311,13 +311,20 @@ function navigateTo(route) {
   handleNavigation();
 }
 
-function checkSession() {
-  state.isAuthenticated = sessionStorage.getItem('couple_auth') === 'true';
-  state.isAdmin = sessionStorage.getItem('admin_auth') === 'true';
+async function checkSession() {
+  try {
+    const response = await fetch('/api/auth/status');
+    const data = await response.json();
+    state.isAuthenticated = data.isAuthenticated;
+    state.isAdmin = data.isAdmin;
+  } catch (e) {
+    state.isAuthenticated = false;
+    state.isAdmin = false;
+  }
 }
 
-function handleNavigation() {
-  checkSession();
+async function handleNavigation() {
+  await checkSession();
   const route = getPath();
 
   // Route protection
@@ -1758,29 +1765,41 @@ function bindUIEvents() {
   // Login Form Submission
   const formLogin = document.getElementById('form-login');
   if (formLogin) {
-    formLogin.onsubmit = (e) => {
+    formLogin.onsubmit = async (e) => {
       e.preventDefault();
       const dateVal = document.getElementById('login-date').value.trim();
       const passVal = document.getElementById('login-pass').value.trim();
+      const errorDiv = document.getElementById('login-error');
 
-      // Standardized inputs check
-      const validDates = ['14/05/26', '14/05/2026', '14-05-26', '14-05-2026'];
-      if (validDates.includes(dateVal) && passVal === '1206') {
-        sessionStorage.setItem('couple_auth', 'true');
-        state.isAuthenticated = true;
-        document.getElementById('login-error').classList.add('hidden');
-        
-        // Animate transition into Universo
-        gsap.to('#sec-login', {
-          opacity: 0,
-          duration: 0.5,
-          onComplete: () => {
-            document.getElementById('sec-login').classList.remove('active');
-            navigateTo('universo');
-          }
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: dateVal, password: passVal })
         });
-      } else {
-        document.getElementById('login-error').classList.remove('hidden');
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          state.isAuthenticated = true;
+          errorDiv.classList.add('hidden');
+          
+          // Animate transition into Universo
+          gsap.to('#sec-login', {
+            opacity: 0,
+            duration: 0.5,
+            onComplete: () => {
+              document.getElementById('sec-login').classList.remove('active');
+              navigateTo('universo');
+            }
+          });
+        } else {
+          errorDiv.textContent = data.error || 'Acceso no disponible';
+          errorDiv.classList.remove('hidden');
+        }
+      } catch (err) {
+        console.error(err);
+        errorDiv.textContent = 'Error de conexión con el servidor';
+        errorDiv.classList.remove('hidden');
       }
     };
   }
@@ -1788,19 +1807,33 @@ function bindUIEvents() {
   // Admin Login Form Submission
   const formAdminLogin = document.getElementById('form-admin-login');
   if (formAdminLogin) {
-    formAdminLogin.onsubmit = (e) => {
+    formAdminLogin.onsubmit = async (e) => {
       e.preventDefault();
       const passVal = document.getElementById('admin-pass').value.trim();
+      const errorDiv = document.getElementById('admin-login-error');
 
-      if (passVal === 'Manuel1214$') {
-        sessionStorage.setItem('admin_auth', 'true');
-        state.isAdmin = true;
-        document.getElementById('admin-login-error').classList.add('hidden');
-        
-        // Redirect to panel dashboard
-        navigateTo('admin');
-      } else {
-        document.getElementById('admin-login-error').classList.remove('hidden');
+      try {
+        const response = await fetch('/api/auth/admin-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: passVal })
+        });
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          state.isAdmin = true;
+          errorDiv.classList.add('hidden');
+          
+          // Redirect to panel dashboard
+          navigateTo('admin');
+        } else {
+          errorDiv.textContent = data.error || 'Contraseña incorrecta';
+          errorDiv.classList.remove('hidden');
+        }
+      } catch (err) {
+        console.error(err);
+        errorDiv.textContent = 'Error de conexión con el servidor';
+        errorDiv.classList.remove('hidden');
       }
     };
   }
@@ -1808,19 +1841,26 @@ function bindUIEvents() {
   // Logout Buttons
   const btnLogout = document.getElementById('btn-logout');
   if (btnLogout) {
-    btnLogout.onclick = () => {
-      sessionStorage.removeItem('couple_auth');
+    btnLogout.onclick = async () => {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } catch (e) {}
       state.isAuthenticated = false;
       stopAllMedia();
       navigateTo('');
     };
   }
 
-  document.getElementById('btn-admin-logout').onclick = () => {
-    sessionStorage.removeItem('admin_auth');
-    state.isAdmin = false;
-    navigateTo('');
-  };
+  const btnAdminLogout = document.getElementById('btn-admin-logout');
+  if (btnAdminLogout) {
+    btnAdminLogout.onclick = async () => {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } catch (e) {}
+      state.isAdmin = false;
+      navigateTo('');
+    };
+  }
 
   // Navigation arrows next/prev chapter clicks
   document.getElementById('btn-prev-chapter').onclick = () => {
@@ -2156,7 +2196,7 @@ window.onload = async () => {
   }
 
   // Show audio controls once authenticated
-  checkSession();
+  await checkSession();
   if (state.isAuthenticated) {
     const playerContainer = document.getElementById('ambient-player-container');
     if (playerContainer) playerContainer.classList.remove('hidden');
@@ -2167,5 +2207,5 @@ window.onload = async () => {
 
   // Hook History API Routing
   window.addEventListener('popstate', handleNavigation);
-  handleNavigation(); // Trigger router on launch
+  await handleNavigation(); // Trigger router on launch
 };
