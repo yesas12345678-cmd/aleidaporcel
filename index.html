@@ -61,7 +61,6 @@
     <button id="tracker-btn-prev" class="nav-arrow-btn text-gray-500 hover:text-neon-cyan transition-all duration-300 text-sm hover:scale-110 p-1" title="Sección Anterior">
       <i class="fas fa-chevron-up"></i>
     </button>
-    <button data-target="universo" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Universo"></button>
     <button data-target="museo" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Museo"></button>
     <button data-target="videos" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Galería de Vídeos"></button>
     <button data-target="archivo" class="nav-dot w-3.5 h-3.5 rounded-full border border-gray-600 bg-transparent transition-all duration-300 hover:border-neon-cyan" title="Instantes al Azar"></button>
@@ -126,18 +125,6 @@
     </div>
   </section>
 
-  <!-- ================= SECTION 2: UNIVERSO (INTRO) ================= -->
-  <section id="sec-universo" class="page-section">
-    <div class="container max-w-4xl px-6 flex flex-col items-center justify-center text-center">
-      <div id="universe-photo-frame" class="mb-12 rounded-full overflow-hidden w-64 h-64 border-2 border-neon-cyan/30 shadow-2xl shadow-neon-cyan/10 relative transition-transform duration-1000 scale-90">
-        <!-- DynImg -->
-        <img id="universe-photo" class="w-full h-full object-cover grayscale-[20%] brightness-90 hover:grayscale-0 transition-all duration-500" src="universe_start.jpg" alt="Foto Universo Clave">
-        <div class="absolute inset-0 bg-gradient-to-t from-space-deep/40 to-transparent"></div>
-      </div>
-      <h2 id="universe-phrase" class="serif-title text-4xl md:text-5xl italic leading-relaxed text-gray-100 font-light mb-8 max-w-2xl px-4 opacity-0 transition-opacity duration-1000">
-        "En un universo infinito, tuve la suerte de coincidir contigo."
-      </h2>
-  </section>
 
   <!-- ================= SECTION 4: MUSEO (POLAROID GALLERY) ================= -->
   <section id="sec-museo" class="page-section py-28 px-4 flex flex-col justify-start">
@@ -385,7 +372,7 @@
           <button id="btn-admin-logout" class="px-4 py-2 border border-red-500/40 text-red-400 hover:bg-red-500 hover:text-white transition-all rounded-lg text-xs font-semibold">
             Salir Admin
           </button>
-          <a href="#/universo" class="px-4 py-2 bg-neon-cyan text-space hover:bg-white transition-all rounded-lg text-xs font-semibold flex items-center gap-2">
+          <a href="/museo" class="px-4 py-2 bg-neon-cyan text-space hover:bg-white transition-all rounded-lg text-xs font-semibold flex items-center gap-2">
             Ver Web <i class="fas fa-external-link-alt text-[10px]"></i>
           </a>
         </div>
@@ -415,7 +402,6 @@
               <div class="flex flex-col">
                 <label class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-2">Asignar a Sección</label>
                 <select id="media-section" class="w-full px-4 py-3 rounded-lg glass-input text-xs cursor-pointer">
-                  <option value="universe">Universo (Máx 1 Foto)</option>
                   <option value="museum" selected>Museo (Fotos ilimitadas)</option>
                   <option value="video-gallery">Galería de Vídeos (Vídeos ilimitados)</option>
                 </select>
@@ -503,10 +489,7 @@
           <div class="glass p-6 rounded-xl">
             <h4 class="text-xs uppercase tracking-widest text-neon-cyan font-bold mb-4">Estado de los Módulos</h4>
             <ul class="flex flex-col gap-3 text-xs text-gray-300">
-              <li class="flex justify-between border-b border-white/5 pb-2">
-                <span>Foto Universo Clave:</span>
-                <span id="stat-universe" class="font-semibold text-white">No configurada</span>
-              </li>
+
               <li class="flex justify-between border-b border-white/5 pb-2">
                 <span>Fotos en Museo:</span>
                 <span class="font-semibold text-white" id="stat-museum-count">0</span>
@@ -531,7 +514,6 @@
             
             <div class="flex gap-4 border-b border-white/10 pb-3 mb-4 text-xs font-semibold text-gray-400">
               <button id="filter-btn-all" class="text-neon-cyan border-b-2 border-neon-cyan pb-2">Todos</button>
-              <button id="filter-btn-universe" class="hover:text-white pb-2 transition-colors">Universo</button>
               <button id="filter-btn-museum" class="hover:text-white pb-2 transition-colors">Museo</button>
               <button id="filter-btn-timeline" class="hover:text-white pb-2 transition-colors">Constelación</button>
               <button id="filter-btn-video" class="hover:text-white pb-2 transition-colors">Vídeos</button>

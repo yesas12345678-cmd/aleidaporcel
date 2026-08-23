@@ -14,8 +14,8 @@ const state = {
   db: null,
   isAuthenticated: false,
   isAdmin: false,
-  currentChapter: 'universo', // universo, museo, videos, archivo, final
-  chapters: ['universo', 'museo', 'videos', 'archivo', 'final'],
+  currentChapter: 'museo', // museo, videos, archivo, final
+  chapters: ['museo', 'videos', 'archivo', 'final'],
   constellationPan: { x: 0, y: 0 },
   activeAudio: null, // Track currently playing audio to avoid overlaps
   typewriterInterval: null, // Track typewriter interval to prevent text accumulation
@@ -358,8 +358,8 @@ async function handleNavigation() {
   if (state.chapters.includes(route)) {
     showSection(route);
   } else {
-    // Default to universo
-    navigateTo('universo');
+    // Default to museo
+    navigateTo('museo');
   }
 }
 
@@ -1662,7 +1662,8 @@ async function syncAdminStatistics() {
   const videoCount = media.filter(m => m.section === 'video-gallery').length;
   const memoryCount = memories.length;
 
-  document.getElementById('stat-universe').textContent = universeCount > 0 ? 'Foto configurada' : 'No configurada';
+  const statUniv = document.getElementById('stat-universe');
+  if (statUniv) statUniv.textContent = universeCount > 0 ? 'Foto configurada' : 'No configurada';
   document.getElementById('stat-museum-count').textContent = museumCount;
   document.getElementById('stat-video-count').textContent = videoCount;
   document.getElementById('stat-memory-count').textContent = `${memoryCount} creados`;
@@ -1789,7 +1790,7 @@ function bindUIEvents() {
             duration: 0.5,
             onComplete: () => {
               document.getElementById('sec-login').classList.remove('active');
-              navigateTo('universo');
+              navigateTo('museo');
             }
           });
         } else {
@@ -2090,7 +2091,8 @@ function bindUIEvents() {
 
   // Admin list filters binding
   document.getElementById('filter-btn-all').onclick = (e) => setAdminFilter('all', e.target);
-  document.getElementById('filter-btn-universe').onclick = (e) => setAdminFilter('universe', e.target);
+  const btnUnivFilter = document.getElementById('filter-btn-universe');
+  if (btnUnivFilter) btnUnivFilter.onclick = (e) => setAdminFilter('universe', e.target);
   document.getElementById('filter-btn-museum').onclick = (e) => setAdminFilter('museum', e.target);
   document.getElementById('filter-btn-timeline').onclick = (e) => setAdminFilter('timeline', e.target);
   document.getElementById('filter-btn-video').onclick = (e) => setAdminFilter('video-gallery', e.target);
