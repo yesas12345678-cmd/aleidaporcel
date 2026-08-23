@@ -852,11 +852,20 @@ const DEFAULT_MUSEUM_PHOTOS = [
 
 async function setupMuseumSection() {
   const grid = document.getElementById('museum-gallery-grid');
+  if (!grid) return;
   grid.innerHTML = '';
 
-  const media = await dbGetAllMedia();
+  let media = [];
+  try {
+    media = await dbGetAllMedia();
+    if (!Array.isArray(media)) media = [];
+  } catch (e) {
+    console.error('Error loading media for museum:', e);
+    media = [];
+  }
+
   // Filter for museum photo assets
-  let museumPhotos = media.filter(m => m.section === 'museum' && m.type.startsWith('image/')).slice(0, 200);
+  let museumPhotos = media.filter(m => m && m.section === 'museum' && m.type && m.type.startsWith('image/')).slice(0, 200);
 
   // Use fallback photos if database is empty
   if (museumPhotos.length === 0) {
@@ -864,7 +873,6 @@ async function setupMuseumSection() {
   }
 
   state.museumPhotos = museumPhotos;
-
   state.currentMuseumIndex = 0; // Iniciar siempre en la primera foto al cargar el museo
 
   const controls = document.querySelector('.louvre-controls');
@@ -877,7 +885,7 @@ async function setupMuseumSection() {
   }
 
   if (museumPhotos.length === 0) {
-    grid.innerHTML = '<div class="col-span-full text-center text-gray-500 font-light py-12">No hay fotos en el museo aún. Sube fotos desde el panel de administración.</div>';
+    grid.innerHTML = '<div class="col-span-full text-center text-stone-700 font-medium py-12">No hay fotos en el museo aún. Sube fotos desde el panel de administración.</div>';
     return;
   }
 
@@ -895,27 +903,15 @@ async function setupMuseumSection() {
 
   if (btnPrev) {
     btnPrev.onclick = () => {
-      const totalPhotos = state.museumPhotos.length;
-      const activePhotoIndex = (state.currentMuseumIndex % totalPhotos + totalPhotos) % totalPhotos;
-      if (activePhotoIndex === 0) {
-        navigateTo('constelacion');
-      } else {
-        state.currentMuseumIndex--;
-        updateSquareRoom3D();
-      }
+      state.currentMuseumIndex--;
+      updateSquareRoom3D();
     };
   }
 
   if (btnNext) {
     btnNext.onclick = () => {
-      const totalPhotos = state.museumPhotos.length;
-      const activePhotoIndex = (state.currentMuseumIndex % totalPhotos + totalPhotos) % totalPhotos;
-      if (activePhotoIndex === totalPhotos - 1) {
-        navigateTo('videos');
-      } else {
-        state.currentMuseumIndex++;
-        updateSquareRoom3D();
-      }
+      state.currentMuseumIndex++;
+      updateSquareRoom3D();
     };
   }
 
@@ -980,10 +976,10 @@ function updateWallContent(wall, photo, wallIndex) {
     const img = document.createElement('img');
     img.className = 'museum-img-3d';
     img.loading = 'lazy';
-    if (photo.id) {
-      img.src = getMediaUrl(photo);
-    } else if (photo.url) {
+    if (photo.url) {
       img.src = photo.url;
+    } else {
+      img.src = getMediaUrl(photo);
     }
 
     imgWrapper.appendChild(img);

@@ -129,9 +129,9 @@
   <!-- ================= SECTION 4: MUSEO (POLAROID GALLERY) ================= -->
   <section id="sec-museo" class="page-section py-28 px-4 flex flex-col justify-start">
     <div class="museum-wall"></div>
-    <div class="text-center mb-16 max-w-xl mx-auto z-10">
-      <h2 class="serif-title text-4xl tracking-widest text-white mb-3">El Museo Silencioso</h2>
-      <p class="text-xs uppercase tracking-widest text-neon-cyan/70 font-light">Una galería sin palabras. Haz clic en las imágenes para sumergirte.</p>
+    <div class="text-center mb-6 max-w-xl mx-auto z-20">
+      <h2 class="serif-title text-4xl tracking-widest text-stone-900 mb-2 font-semibold">El Museo Silencioso</h2>
+      <p class="text-xs uppercase tracking-widest text-stone-600 font-medium">Una galería sin palabras. Haz clic en las imágenes para sumergirte.</p>
     </div>
 
     <!-- 3D Louvre Gallery Viewport -->
@@ -142,8 +142,14 @@
     </div>
 
     <!-- Louvre 3D Controller Navigation -->
-    <div class="louvre-controls mt-6 z-20 flex items-center justify-center gap-6">
-      <span id="louvre-index-tracker" class="text-sm font-semibold tracking-widest text-white/70 min-w-[70px] text-center font-mono">0 / 0</span>
+    <div class="louvre-controls mt-4 z-30 flex items-center justify-center gap-6">
+      <button id="btn-louvre-prev" class="px-5 py-2.5 rounded-full bg-stone-900/90 border border-stone-700 text-stone-200 hover:text-neon-cyan hover:border-neon-cyan transition-all text-xs font-semibold uppercase tracking-wider flex items-center gap-2 shadow-lg cursor-pointer">
+        <i class="fas fa-chevron-left"></i> Anterior
+      </button>
+      <span id="louvre-index-tracker" class="text-sm font-bold tracking-widest text-stone-800 min-w-[90px] text-center font-mono">0 / 0</span>
+      <button id="btn-louvre-next" class="px-5 py-2.5 rounded-full bg-stone-900/90 border border-stone-700 text-stone-200 hover:text-neon-cyan hover:border-neon-cyan transition-all text-xs font-semibold uppercase tracking-wider flex items-center gap-2 shadow-lg cursor-pointer">
+        Siguiente <i class="fas fa-chevron-right"></i>
+      </button>
     </div>
 
     <!-- Photo Zoom Lightbox with audio support -->

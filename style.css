@@ -368,6 +368,20 @@ body {
   transition: background 1.2s ease-in-out;
 }
 
+.theme-museum #experience-header span {
+  color: #1c1917 !important;
+  font-weight: 600;
+}
+
+.theme-museum #experience-nav-tracker button {
+  border-color: #57534e !important;
+  color: #1c1917 !important;
+}
+
+.theme-museum #experience-nav-tracker .h-12 {
+  background-color: #78716c !important;
+}
+
 /* Luxury Wood Wall Effect for Museum */
 .museum-wall {
   position: absolute;
